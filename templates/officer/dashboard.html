@@ -1,0 +1,256 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Dashboard | CreditSense AI{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block officer_content %}
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+    <div>
+        <h1 class="display-6 fw-bold text-dark mb-2">Bank Officer Dashboard</h1>
+        <p class="text-secondary fs-6 mb-0">
+            Review assigned applications, monitor AI decisions, and follow recent applicant activity from one workspace.
+        </p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Stat Cards -->
+    <div class="col-md-4 col-xl-2.4">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                <i class="bi bi-layers-fill"></i>
+            </div>
+            <div class="stat-value">{{ total_applications }}</div>
+            <div class="stat-label">Total Assigned</div>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2.4">
+        <div class="stat-card">
+            <div class="stat-icon bg-success bg-opacity-10 text-success">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div class="stat-value">{{ approved_count }}</div>
+            <div class="stat-label">Auto Approved (AI)</div>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2.4">
+        <div class="stat-card">
+            <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                <i class="bi bi-x-circle-fill"></i>
+            </div>
+            <div class="stat-value">{{ rejected_count }}</div>
+            <div class="stat-label">Auto Rejected (AI)</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-2.4">
+        <div class="stat-card">
+            <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="stat-value">{{ verification_required_count }}</div>
+            <div class="stat-label">Pending Verification</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-2.4">
+        <div class="stat-card">
+            <div class="stat-icon bg-secondary bg-opacity-10 text-dark">
+                <i class="bi bi-flag-fill"></i>
+            </div>
+            <div class="stat-value">{{ open_alerts }}</div>
+            <div class="stat-label">Flagged Cases</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Charts -->
+    <div class="col-xl-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h5 class="fw-bold mb-4">Approval vs Rejection</h5>
+            <div style="height: 300px;">
+                <canvas id="approvalChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h5 class="fw-bold mb-4">Risk Distribution</h5>
+            <div style="height: 300px;">
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card-header bg-white border-0 p-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Recent applicant activity</h5>
+            <a href="{% url 'bank_officer:applications' %}" class="btn btn-primary btn-sm rounded-pill px-3">View All</a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Applicant</th>
+                    <th>Amount</th>
+                    <th>Employment</th>
+                    <th>Risk Score</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for application in recent_activity %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle me-3" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                {{ application.user.username|first|upper }}
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ application.user.get_full_name|default:application.user.username }}</div>
+                                <div class="text-muted small">Submitted {{ application.created_at|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ application.loan_amnt|inr_currency }}</td>
+                    <td>{{ application.emp_length|default:"Not specified" }}</td>
+                    <td>
+                        {% if application.prediction %}
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                                <div class="progress-bar {% if application.prediction.risk_probability > 0.7 %}bg-danger{% elif application.prediction.risk_probability > 0.4 %}bg-warning{% else %}bg-success{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ application.prediction.risk_probability|multiply:100 }}%"></div>
+                            </div>
+                            <span class="small fw-bold">{{ application.prediction.risk_probability|multiply:100|floatformat:0 }}%</span>
+                        </div>
+                        {% else %}
+                        <span class="text-muted small">Pending AI</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge-status {% if application.status == 'APPROVED' %}status-approved{% elif application.status == 'REJECTED' %}status-rejected{% else %}status-pending{% endif %}">
+                            {{ application.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <a href="{% url 'bank_officer:application-detail' application.id %}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold">View Details</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">No recent applications.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .col-xl-2\.4 {
+        flex: 0 0 auto;
+        width: 20%;
+    }
+    @media (max-width: 1200px) {
+        .col-xl-2\.4 {
+            width: 33.33%;
+        }
+    }
+    @media (max-width: 768px) {
+        .col-xl-2\.4 {
+            width: 50%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Approval vs Rejection Chart
+        const approvalCtx = document.getElementById('approvalChart').getContext('2d');
+        new Chart(approvalCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Approved (AI)', 'Rejected (AI)', 'Pending'],
+                datasets: [{
+                    data: [{{ approved_count|default:0 }}, {{ rejected_count|default:0 }}, {{ pending_count|default:0 }}],
+                    backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
+                    hoverBackgroundColor: ['#218838', '#c82333', '#e0a800'],
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 25,
+                            font: { family: "'Inter', sans-serif", size: 12 }
+                        }
+                    },
+                    tooltip: {
+                        padding: 12,
+                        cornerRadius: 8,
+                        titleFont: { size: 14 }
+                    }
+                },
+                cutout: '75%'
+            }
+        });
+
+        // Risk Distribution Chart
+        const riskCtx = document.getElementById('riskChart').getContext('2d');
+        new Chart(riskCtx, {
+            type: 'bar',
+            data: {
+                labels: [{% for label in risk_breakdown.keys %}'{{ label }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Applications',
+                    data: [{% for total in risk_breakdown.values %}{{ total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    backgroundColor: [
+                        'rgba(40, 167, 69, 0.6)',
+                        'rgba(255, 193, 7, 0.6)',
+                        'rgba(220, 53, 69, 0.6)'
+                    ],
+                    borderColor: [
+                        '#28a745',
+                        '#ffc107',
+                        '#dc3545'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [5, 5], color: '#eef0f2' },
+                        ticks: { stepSize: 1 }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

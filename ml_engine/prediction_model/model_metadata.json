@@ -1,0 +1,112 @@
+{
+  "model_name": "CreditSense Ensemble",
+  "model_version": "2026.03.14",
+  "dataset_path": "C:\\Users\\ADMIN\\Desktop\\credit ai\\creditsense_ai\\dataset\\credit_risk_dataset.csv",
+  "dataset_profile": {
+    "row_count": 28638,
+    "loan_amount_q95": 24000.0,
+    "loan_percent_income_q95": 0.38,
+    "interest_rate_q95": 16.32,
+    "median_income": 55956.0,
+    "median_credit_history": 4.0,
+    "median_employment_length": 4.0
+  },
+  "feature_columns": [
+    "person_income",
+    "cb_person_cred_hist_length",
+    "cb_person_default_on_file",
+    "loan_amnt",
+    "loan_percent_income",
+    "person_age",
+    "person_emp_length",
+    "loan_int_rate",
+    "person_home_ownership",
+    "loan_intent",
+    "loan_grade"
+  ],
+  "categorical_columns": [
+    "person_home_ownership",
+    "loan_intent",
+    "loan_grade",
+    "cb_person_default_on_file"
+  ],
+  "class_distribution": {
+    "0": 22435,
+    "1": 6203
+  },
+  "feature_importance": {
+    "person_income": 0.12378446849985326,
+    "cb_person_cred_hist_length": 0.012447350272152621,
+    "cb_person_default_on_file": 0.01068119784649492,
+    "loan_amnt": 0.05072331500952148,
+    "loan_percent_income": 0.27284911407511214,
+    "person_age": 0.01617601518102549,
+    "person_emp_length": 0.04719011430833761,
+    "loan_int_rate": 0.10421137642023137,
+    "person_home_ownership": 0.1334487498152721,
+    "loan_intent": 0.0658237509844356,
+    "loan_grade": 0.16266454758756332
+  },
+  "metrics": {
+    "random_forest": {
+      "accuracy": 0.9245810055865922,
+      "report": {
+        "0": {
+          "precision": 0.9165810560920485,
+          "recall": 0.9942054825050145,
+          "f1-score": 0.9538165490699166,
+          "support": 4487.0
+        },
+        "1": {
+          "precision": 0.9698025551684089,
+          "recall": 0.6728444802578566,
+          "f1-score": 0.7944814462416746,
+          "support": 1241.0
+        },
+        "accuracy": 0.9245810055865922,
+        "macro avg": {
+          "precision": 0.9431918056302286,
+          "recall": 0.8335249813814356,
+          "f1-score": 0.8741489976557957,
+          "support": 5728.0
+        },
+        "weighted avg": {
+          "precision": 0.9281117614610714,
+          "recall": 0.9245810055865922,
+          "f1-score": 0.9192957979159626,
+          "support": 5728.0
+        }
+      }
+    },
+    "logistic_regression": {
+      "accuracy": 0.8411312849162011,
+      "report": {
+        "0": {
+          "precision": 0.8616784630940344,
+          "recall": 0.9496322710051259,
+          "f1-score": 0.9035199321458863,
+          "support": 4487.0
+        },
+        "1": {
+          "precision": 0.7113665389527458,
+          "recall": 0.44883158742949236,
+          "f1-score": 0.5503952569169961,
+          "support": 1241.0
+        },
+        "accuracy": 0.8411312849162011,
+        "macro avg": {
+          "precision": 0.78652250102339,
+          "recall": 0.6992319292173091,
+          "f1-score": 0.7269575945314413,
+          "support": 5728.0
+        },
+        "weighted avg": {
+          "precision": 0.8291126289705464,
+          "recall": 0.8411312849162011,
+          "f1-score": 0.8270136957703534,
+          "support": 5728.0
+        }
+      }
+    }
+  }
+}

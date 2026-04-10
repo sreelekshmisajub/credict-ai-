@@ -1,0 +1,155 @@
+{% extends 'officer/base.html' %}
+
+{% block title %}Explanation Detail | CreditSense AI{% endblock %}
+
+{% block officer_content %}
+<div class="section-heading">
+    <div>
+        <h1 class="mb-2">Explainable AI for Application #{{ application.id }}</h1>
+        <p class="muted-text mb-0">
+            Transparent feature attribution for {{ application.user.get_full_name|default:application.user.username }}.
+        </p>
+    </div>
+    <div class="hero-badges">
+        <span class="stat-chip">Score {{ prediction.credit_score }}</span>
+        <span class="score-pill">{{ prediction.risk_category }}</span>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-6">
+        <div class="panel-card h-100">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">SHAP contributions</h2>
+                    <p class="muted-text mb-0">How each major feature pushed the score up or down.</p>
+                </div>
+            </div>
+            {% if shap_chart_points %}
+                <div class="chart-shell">
+                    <canvas id="officerShapExplainChart" height="220"></canvas>
+                </div>
+            {% else %}
+                <div class="feature-list">
+                    {% for label, value in prediction.shap_explanations.items %}
+                        <div class="feature-row">
+                            <span>{{ label }}</span>
+                            <strong>{{ value }}</strong>
+                        </div>
+                    {% empty %}
+                        <p class="muted-text mb-0">SHAP output is not available for this prediction.</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="panel-card h-100">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">LIME contributions</h2>
+                    <p class="muted-text mb-0">Local explanation rules describing the model behavior for this application.</p>
+                </div>
+            </div>
+            {% if lime_chart_points %}
+                <div class="chart-shell">
+                    <canvas id="officerLimeChart" height="220"></canvas>
+                </div>
+            {% else %}
+                <div class="feature-list">
+                    {% for label, value in prediction.lime_explanations.items %}
+                        <div class="feature-row">
+                            <span>{{ label }}</span>
+                            <strong>{{ value }}</strong>
+                        </div>
+                    {% empty %}
+                        <p class="muted-text mb-0">LIME output is not available for this prediction.</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="panel-card">
+    <div class="section-heading mb-3">
+        <div>
+            <h2 class="h4 mb-1">Decision context</h2>
+            <p class="muted-text mb-0">Use explainability output together with risk analysis and applicant history.</p>
+        </div>
+    </div>
+    <div class="officer-link-grid">
+        {% if document_status.document_url %}
+            <div class="feature-card">
+                <div class="feature-kicker">Proof</div>
+                <h3 class="h5">Income verification file</h3>
+                <p class="muted-text mb-0">Current status: {{ document_status.status }}. <a href="{{ document_status.document_url }}" target="_blank" rel="noopener">Open {{ document_status.document_name }}</a></p>
+            </div>
+        {% endif %}
+        <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:risk-analysis-detail' application.id %}">
+            <div class="feature-kicker">Risk</div>
+            <h3 class="h5">Back to risk analysis</h3>
+            <p class="muted-text mb-0">Review the credit score, class, and source features again.</p>
+        </a>
+        <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:applicant-profile' application.user.id %}">
+            <div class="feature-kicker">Profile</div>
+            <h3 class="h5">Open applicant profile</h3>
+            <p class="muted-text mb-0">Check borrower history and prior submissions before deciding.</p>
+        </a>
+        <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:decision' application.id %}">
+            <div class="feature-kicker">Decision</div>
+            <h3 class="h5">Continue to decision page</h3>
+            <p class="muted-text mb-0">Approve, reject, or request additional verification with notes.</p>
+        </a>
+    </div>
+</div>
+{{ shap_chart_points|json_script:"officer-explain-shap-data" }}
+{{ lime_chart_points|json_script:"officer-explain-lime-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  (() => {
+    const buildChart = (elementId, dataId, color) => {
+      const points = JSON.parse(document.getElementById(dataId)?.textContent || "[]");
+      const canvas = document.getElementById(elementId);
+      if (!points.length || !canvas) {
+        return;
+      }
+      new Chart(canvas, {
+        type: "bar",
+        data: {
+          labels: points.map((item) => item.label),
+          datasets: [
+            {
+              data: points.map((item) => item.value),
+              backgroundColor: color,
+              borderRadius: 12,
+            },
+          ],
+        },
+        options: {
+          indexAxis: "y",
+          plugins: {
+            legend: { display: false },
+          },
+          scales: {
+            x: {
+              grid: { color: "rgba(24, 39, 75, 0.08)" },
+              ticks: { color: "#5e6a82" },
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: "#1f2a3d" },
+            },
+          },
+        },
+      });
+    };
+
+    buildChart("officerShapExplainChart", "officer-explain-shap-data", "rgba(12, 166, 120, 0.75)");
+    buildChart("officerLimeChart", "officer-explain-lime-data", "rgba(13, 110, 253, 0.7)");
+  })();
+</script>
+{% endblock %}

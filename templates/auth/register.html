@@ -1,0 +1,1478 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Applicant Registration | CreditSense AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --auth-bg: #f8fafc;
+        --card-bg: #ffffff;
+        --soft-bg: #f8fafc;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --accent: #0066ff;
+        --accent-hover: #0052cc;
+        --border: #e2e8f0;
+        --error: #ef4444;
+        --success: #059669;
+    }
+
+    body {
+        background: var(--auth-bg);
+        color: var(--text-primary);
+        font-family: 'Inter', sans-serif;
+    }
+
+    .auth-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 20px;
+    }
+
+    .reg-card {
+        width: 100%;
+        max-width: 920px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+    }
+
+    .reg-header,
+    .reg-body {
+        padding: 32px 40px;
+    }
+
+    .reg-header {
+        border-bottom: 1px solid var(--border);
+        text-align: center;
+    }
+
+    .reg-header h1 {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: var(--accent);
+        margin-bottom: 8px;
+    }
+
+    .reg-header p,
+    .helper-text,
+    .section-copy,
+    .document-note {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+
+    .progress-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .step-chip {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 10px 14px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-align: center;
+        background: white;
+    }
+
+    .step-chip.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(0, 102, 255, 0.06);
+    }
+
+    .step-chip.completed {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: white;
+    }
+
+    .reg-step {
+        display: none;
+    }
+
+    .reg-step.active {
+        display: block;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.88rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .form-control,
+    .form-select {
+        height: 48px;
+        border-radius: 12px;
+        border: 1.5px solid var(--border);
+        padding: 0 16px;
+    }
+
+    textarea.form-control {
+        min-height: 90px;
+        height: auto;
+        padding: 12px 16px;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.08);
+    }
+
+    .error-msg {
+        color: var(--error);
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 6px;
+    }
+
+    .panel-box {
+        margin-top: 18px;
+        border: 1px solid var(--border);
+        background: var(--soft-bg);
+        border-radius: 16px;
+        padding: 18px;
+    }
+
+    .panel-box h6 {
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .risk-alert {
+        display: none;
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #c2410c;
+        font-size: 0.84rem;
+    }
+
+    .document-header,
+    .document-card-top,
+    .document-file-meta,
+    .btn-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .document-progress-pill,
+    .document-status {
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .document-progress-pill {
+        background: rgba(0, 102, 255, 0.08);
+        color: var(--accent);
+    }
+
+    .document-empty-state {
+        padding: 14px 16px;
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        background: white;
+        color: var(--text-secondary);
+        font-size: 0.84rem;
+        margin-bottom: 14px;
+    }
+
+    .document-summary-list {
+        display: none;
+        margin-bottom: 14px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: white;
+        border: 1px solid var(--border);
+    }
+
+    .document-summary-list strong {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .document-summary-list ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--text-secondary);
+        font-size: 0.84rem;
+    }
+
+    .document-summary-list li + li {
+        margin-top: 8px;
+    }
+
+    .document-summary-list li strong {
+        display: inline;
+        margin-bottom: 0;
+        color: var(--text-primary);
+    }
+
+    .document-card-list {
+        display: grid;
+        gap: 14px;
+    }
+
+    .document-upload-card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: white;
+        padding: 16px;
+    }
+
+    .document-upload-card.active {
+        border-color: rgba(0, 102, 255, 0.4);
+        box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.06);
+    }
+
+    .document-upload-card.invalid {
+        border-color: rgba(239, 68, 68, 0.6);
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08);
+    }
+
+    .document-status {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .document-status.uploaded {
+        background: rgba(16, 185, 129, 0.14);
+        color: var(--success);
+    }
+
+    .document-status.error {
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+    }
+
+    .document-dropzone {
+        margin-top: 12px;
+        border: 1.5px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 16px;
+        background: #f8fafc;
+        cursor: pointer;
+    }
+
+    .document-dropzone.dragging,
+    .document-dropzone:hover {
+        border-color: var(--accent);
+        background: rgba(0, 102, 255, 0.04);
+    }
+
+    .document-dropzone strong {
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .document-dropzone p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.82rem;
+    }
+
+    .document-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .document-action-button,
+    .btn-reg {
+        border-radius: 999px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .document-action-button {
+        padding: 10px 16px;
+        font-size: 0.82rem;
+        border: none;
+    }
+
+    .document-action-button.primary,
+    .btn-next {
+        background: var(--accent);
+        color: white;
+    }
+
+    .document-action-button.secondary,
+    .btn-back {
+        background: white;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+    }
+
+    .document-file-meta {
+        display: none;
+        align-items: center;
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid #a7f3d0;
+        background: #ecfdf5;
+        color: var(--success);
+        font-size: 0.82rem;
+    }
+
+    .document-file-meta.visible {
+        display: flex;
+    }
+
+    .required-star {
+        color: var(--error);
+        margin-left: 4px;
+    }
+
+    .btn-row {
+        margin-top: 32px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-reg {
+        flex: 1;
+        height: 52px;
+        border: none;
+        font-size: 0.96rem;
+    }
+
+    .btn-next:hover:not(:disabled) {
+        background: var(--accent-hover);
+    }
+
+    .btn-next:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .form-check-input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+    }
+
+    .eye-toggle {
+        position: absolute;
+        right: 14px;
+        top: 42px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 1.15rem;
+    }
+
+    .modal-backdrop-lite {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.58);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 1100;
+    }
+
+    .modal-backdrop-lite.active {
+        display: flex;
+    }
+
+    .warning-modal-card {
+        width: min(440px, 100%);
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+    }
+
+    @media (max-width: 768px) {
+        .reg-header,
+        .reg-body {
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .progress-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .document-header,
+        .document-card-top,
+        .document-file-meta,
+        .btn-row {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="reg-card">
+        <div class="reg-header">
+            <h1>CreditSense AI</h1>
+            <p>Smart credit registration with guided verification and strict employment document validation.</p>
+        </div>
+
+        <form method="post" id="multi-step-form" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <div class="reg-body">
+                <div class="progress-row">
+                    <div class="step-chip active">1. Personal</div>
+                    <div class="step-chip">2. Employment</div>
+                    <div class="step-chip">3. Risk Check</div>
+                    <div class="step-chip">4. Finalize</div>
+                </div>
+
+                <div class="reg-step active" id="step-1">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            {{ form.first_name }}
+                            <div class="error-msg" id="msg-first_name">{% if form.first_name.errors %}{{ form.first_name.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            {{ form.last_name }}
+                            <div class="error-msg" id="msg-last_name">{% if form.last_name.errors %}{{ form.last_name.errors.0 }}{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Date of Birth</label>
+                            {{ form.dob }}
+                            <div class="error-msg" id="msg-dob">{% if form.dob.errors %}{{ form.dob.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Gender</label>
+                            {{ form.gender }}
+                            <div class="error-msg" id="msg-gender">{% if form.gender.errors %}{{ form.gender.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Marital Status</label>
+                            {{ form.marital_status }}
+                            <div class="error-msg" id="msg-marital_status">{% if form.marital_status.errors %}{{ form.marital_status.errors.0 }}{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Email Address</label>
+                            {{ form.email }}
+                            <div class="error-msg" id="msg-email">{% if form.email.errors %}{{ form.email.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mobile Number</label>
+                            {{ form.mobile_number }}
+                            <div class="error-msg" id="msg-mobile_number">{% if form.mobile_number.errors %}{{ form.mobile_number.errors.0 }}{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Permanent Address</label>
+                        {{ form.residential_address }}
+                        <div class="error-msg" id="msg-residential_address">{% if form.residential_address.errors %}{{ form.residential_address.errors.0 }}{% endif %}</div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label">City</label>
+                            {{ form.city }}
+                            <div class="error-msg" id="msg-city">{% if form.city.errors %}{{ form.city.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State</label>
+                            {{ form.state }}
+                            <div class="error-msg" id="msg-state">{% if form.state.errors %}{{ form.state.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">PIN Code</label>
+                            {{ form.pin_code }}
+                            <div class="error-msg" id="msg-pin_code">{% if form.pin_code.errors %}{{ form.pin_code.errors.0 }}{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button type="button" class="btn-reg btn-next" onclick="validateAndGoTo(1, 2)">Continue to Employment</button>
+                    </div>
+                </div>
+
+                <div class="reg-step" id="step-2">
+                    <div class="mb-4">
+                        <label class="form-label">Employment Type</label>
+                        {{ form.employment_type }}
+                        <div class="error-msg" id="msg-employment_type">{% if form.employment_type.errors %}{{ form.employment_type.errors.0 }}{% endif %}</div>
+                        <span class="helper-text">The selected employment type decides the exact supporting documents required to continue.</span>
+                    </div>
+
+                    <div id="risk-warning" class="risk-alert">
+                        <span>This employment type may require extra verification because the income pattern is less stable.</span>
+                    </div>
+
+                    <div id="salaried-box" style="display: none;">
+                        <div class="row g-3 mt-1 mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label">Employer Name</label>
+                                {{ form.employer_name }}
+                                <div class="error-msg" id="msg-employer_name">{% if form.employer_name.errors %}{{ form.employer_name.errors.0 }}{% endif %}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Salary Bank</label>
+                                {{ form.salary_bank }}
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Monthly Net Salary (INR)</label>
+                            {{ form.monthly_salary }}
+                            <div class="error-msg" id="msg-monthly_salary">{% if form.monthly_salary.errors %}{{ form.monthly_salary.errors.0 }}{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <div id="biz-box" style="display: none;">
+                        <div class="mb-4">
+                            <label class="form-label">Business / Firm Name</label>
+                            {{ form.business_name }}
+                            <div class="error-msg" id="msg-business_name">{% if form.business_name.errors %}{{ form.business_name.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Annual Business Income (INR)</label>
+                                {{ form.annual_income }}
+                                <div class="error-msg" id="msg-annual_income">{% if form.annual_income.errors %}{{ form.annual_income.errors.0 }}{% endif %}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Years in Business</label>
+                                {{ form.years_in_business }}
+                                <div class="error-msg" id="msg-years_in_business">{% if form.years_in_business.errors %}{{ form.years_in_business.errors.0 }}{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="unstable-box" style="display: none;">
+                        <div class="mb-4">
+                            <label class="form-label">Average Monthly Income (INR)</label>
+                            {{ form.average_monthly_income }}
+                            <div class="error-msg" id="msg-average_monthly_income">{% if form.average_monthly_income.errors %}{{ form.average_monthly_income.errors.0 }}{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <div id="co-app-box" class="panel-box" style="display: none;">
+                        <h6>Co-applicant details</h6>
+                        <p class="section-copy">Homemaker registrations require co-applicant details before document upload.</p>
+                        <div class="form-check mb-3">
+                            {{ form.has_co_applicant }}
+                            <label class="small fw-medium" for="{{ form.has_co_applicant.id_for_label }}">I am adding a co-applicant to this application</label>
+                        </div>
+                        <div class="error-msg" id="msg-has_co_applicant">{% if form.has_co_applicant.errors %}{{ form.has_co_applicant.errors.0 }}{% endif %}</div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Co-applicant Name</label>
+                                {{ form.co_applicant_name }}
+                                <div class="error-msg" id="msg-co_applicant_name">{% if form.co_applicant_name.errors %}{{ form.co_applicant_name.errors.0 }}{% endif %}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Relationship</label>
+                                {{ form.co_applicant_relationship }}
+                                <div class="error-msg" id="msg-co_applicant_relationship">{% if form.co_applicant_relationship.errors %}{{ form.co_applicant_relationship.errors.0 }}{% endif %}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Monthly Income</label>
+                                {{ form.co_applicant_income }}
+                                <div class="error-msg" id="msg-co_applicant_income">{% if form.co_applicant_income.errors %}{{ form.co_applicant_income.errors.0 }}{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="guarantor-box" class="panel-box" style="display: none;">
+                        <h6>Guarantor details</h6>
+                        <p class="section-copy">Student and unemployed registrations require a guarantor before document upload.</p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Guarantor Name</label>
+                                {{ form.guarantor_name }}
+                                <div class="error-msg" id="msg-guarantor_name">{% if form.guarantor_name.errors %}{{ form.guarantor_name.errors.0 }}{% endif %}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Guarantor Contact</label>
+                                {{ form.guarantor_contact }}
+                                <div class="error-msg" id="msg-guarantor_contact">{% if form.guarantor_contact.errors %}{{ form.guarantor_contact.errors.0 }}{% endif %}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Guarantor Income</label>
+                                {{ form.guarantor_income }}
+                                <div class="error-msg" id="msg-guarantor_income">{% if form.guarantor_income.errors %}{{ form.guarantor_income.errors.0 }}{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="document-box" class="panel-box">
+                        <div class="document-header">
+                            <div>
+                                <h6 id="document-section-title">Required Documents for Your Employment Type</h6>
+                                <span class="helper-text">Every listed document is mandatory. Each upload is checked instantly and re-validated again before registration is saved.</span>
+                            </div>
+                            <div class="document-progress-pill" id="document-progress-pill">0 of 0 documents uploaded</div>
+                        </div>
+
+                        <div class="document-note" id="document-note"></div>
+                        <div class="document-empty-state" id="document-empty-state">
+                            Select an employment type to load the exact required document upload fields for this application.
+                        </div>
+                        <div class="document-summary-list" id="document-summary-list">
+                            <strong>Exact required documents</strong>
+                            <ul id="document-summary-items"></ul>
+                        </div>
+
+                        <div class="document-card-list">
+                            <div class="document-upload-card" id="employment-doc-primary-card">
+                                <div class="document-card-top">
+                                    <div>
+                                        <div class="fw-bold" id="employment-doc-primary-label">Primary document<span class="required-star">*</span></div>
+                                        <p class="section-copy mb-0" id="employment-doc-primary-help">Upload the main proof required for your selected employment type.</p>
+                                    </div>
+                                    <div class="document-status" id="employment-doc-primary-status">Pending</div>
+                                </div>
+                                {{ form.employment_document_primary }}
+                                <div class="document-dropzone" id="employment-doc-primary-dropzone">
+                                    <strong>Upload or drag file here</strong>
+                                    <p>Accepted formats: PDF, JPG, JPEG, PNG. Max file size: 5MB.</p>
+                                </div>
+                                <div class="document-actions">
+                                    <button type="button" class="document-action-button primary" data-action="upload" data-input-id="{{ form.employment_document_primary.id_for_label }}">Choose file</button>
+                                    <button type="button" class="document-action-button secondary" data-action="remove" data-input-id="{{ form.employment_document_primary.id_for_label }}">Remove</button>
+                                    <button type="button" class="document-action-button secondary" data-action="replace" data-input-id="{{ form.employment_document_primary.id_for_label }}">Replace</button>
+                                </div>
+                                <div class="document-file-meta" id="employment-doc-primary-meta">
+                                    <div>
+                                        <strong id="employment-doc-primary-file-name">No file selected</strong>
+                                        <span id="employment-doc-primary-file-size">0 KB</span>
+                                    </div>
+                                    <span>Uploaded &#10003;</span>
+                                </div>
+                                <div class="error-msg" id="msg-employment_document_primary">{% if form.employment_document_primary.errors %}{{ form.employment_document_primary.errors.0 }}{% endif %}</div>
+                            </div>
+
+                            <div class="document-upload-card" id="employment-doc-secondary-card" style="display: none;">
+                                <div class="document-card-top">
+                                    <div>
+                                        <div class="fw-bold" id="employment-doc-secondary-label">Secondary document<span class="required-star">*</span></div>
+                                        <p class="section-copy mb-0" id="employment-doc-secondary-help">Upload the second proof required for your selected employment type.</p>
+                                    </div>
+                                    <div class="document-status" id="employment-doc-secondary-status">Pending</div>
+                                </div>
+                                {{ form.employment_document_secondary }}
+                                <div class="document-dropzone" id="employment-doc-secondary-dropzone">
+                                    <strong>Upload or drag file here</strong>
+                                    <p>Accepted formats: PDF, JPG, JPEG, PNG. Max file size: 5MB.</p>
+                                </div>
+                                <div class="document-actions">
+                                    <button type="button" class="document-action-button primary" data-action="upload" data-input-id="{{ form.employment_document_secondary.id_for_label }}">Choose file</button>
+                                    <button type="button" class="document-action-button secondary" data-action="remove" data-input-id="{{ form.employment_document_secondary.id_for_label }}">Remove</button>
+                                    <button type="button" class="document-action-button secondary" data-action="replace" data-input-id="{{ form.employment_document_secondary.id_for_label }}">Replace</button>
+                                </div>
+                                <div class="document-file-meta" id="employment-doc-secondary-meta">
+                                    <div>
+                                        <strong id="employment-doc-secondary-file-name">No file selected</strong>
+                                        <span id="employment-doc-secondary-file-size">0 KB</span>
+                                    </div>
+                                    <span>Uploaded &#10003;</span>
+                                </div>
+                                <div class="error-msg" id="msg-employment_document_secondary">{% if form.employment_document_secondary.errors %}{{ form.employment_document_secondary.errors.0 }}{% endif %}</div>
+                            </div>
+                        </div>
+
+                        <div class="error-msg" id="document-global-error"></div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button type="button" class="btn-reg btn-back" onclick="goToStep(1)">Back</button>
+                        <button type="button" class="btn-reg btn-next" id="employment-proceed-button" onclick="validateAndGoTo(2, 3)" disabled>Proceed -> (Upload all documents to continue)</button>
+                    </div>
+                </div>
+
+                <div class="reg-step" id="step-3">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Loan Purpose</label>
+                            {{ form.loan_purpose }}
+                            <div class="error-msg" id="msg-loan_purpose">{% if form.loan_purpose.errors %}{{ form.loan_purpose.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Requested Amount (INR)</label>
+                            {{ form.loan_amount_requested }}
+                            <div class="error-msg" id="msg-loan_amount_requested">{% if form.loan_amount_requested.errors %}{{ form.loan_amount_requested.errors.0 }}{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Existing EMIs (Total / Month)</label>
+                            {{ form.existing_emis }}
+                            <div class="error-msg" id="msg-existing_emis">{% if form.existing_emis.errors %}{{ form.existing_emis.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Number of Dependants</label>
+                            {{ form.num_dependants }}
+                        </div>
+                    </div>
+
+                    <div class="panel-box">
+                        <h6>Asset Declaration</h6>
+                        <p class="section-copy">Mark the assets currently available in your financial profile.</p>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="form-check">{{ form.has_residential_property }}<label class="small" for="{{ form.has_residential_property.id_for_label }}">Residential Property</label></div>
+                                <div class="form-check">{{ form.has_commercial_property }}<label class="small" for="{{ form.has_commercial_property.id_for_label }}">Commercial Property</label></div>
+                                <div class="form-check">{{ form.has_agricultural_land }}<label class="small" for="{{ form.has_agricultural_land.id_for_label }}">Agricultural Land</label></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">{{ form.has_vehicle }}<label class="small" for="{{ form.has_vehicle.id_for_label }}">Owned Vehicle</label></div>
+                                <div class="form-check">{{ form.has_gold_jewellery }}<label class="small" for="{{ form.has_gold_jewellery.id_for_label }}">Gold / Jewellery</label></div>
+                                <div class="form-check">{{ form.has_fixed_deposits }}<label class="small" for="{{ form.has_fixed_deposits.id_for_label }}">Fixed Deposits</label></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Aadhaar Number</label>
+                            {{ form.aadhaar_number }}
+                            <div class="error-msg" id="msg-aadhaar_number">{% if form.aadhaar_number.errors %}{{ form.aadhaar_number.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">PAN Number</label>
+                            {{ form.pan_number }}
+                            <div class="error-msg" id="msg-pan_number">{% if form.pan_number.errors %}{{ form.pan_number.errors.0 }}{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button type="button" class="btn-reg btn-back" onclick="goToStep(2)">Back</button>
+                        <button type="button" class="btn-reg btn-next" onclick="validateAndGoTo(3, 4)">Proceed to Finalize</button>
+                    </div>
+                </div>
+
+                <div class="reg-step" id="step-4">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger p-2 mb-3 small">
+                            {{ form.non_field_errors.0 }}
+                        </div>
+                    {% endif %}
+
+                    <div class="panel-box" style="background: white;">
+                        <h6>Account Security</h6>
+                        <p class="section-copy">Create your password to finish the registration process.</p>
+                        <div class="mb-3 position-relative">
+                            <label class="form-label">Create Password</label>
+                            {{ form.password }}
+                            <i class="bi bi-eye-slash eye-toggle" onclick="togglePass('id_password', this)"></i>
+                            <div class="error-msg" id="msg-password">{% if form.password.errors %}{{ form.password.errors.0 }}{% endif %}</div>
+                        </div>
+                        <div class="position-relative">
+                            <label class="form-label">Confirm Password</label>
+                            {{ form.confirm_password }}
+                            <i class="bi bi-eye-slash eye-toggle" onclick="togglePass('id_confirm_password', this)"></i>
+                            <div class="error-msg" id="msg-confirm_password">{% if form.confirm_password.errors %}{{ form.confirm_password.errors.0 }}{% endif %}</div>
+                        </div>
+                    </div>
+
+                    <div class="p-2 mt-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="auth-check" required>
+                            <label class="small" for="auth-check">I authorize CreditSense AI to check my credit history via CIBIL or Experian.</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="accuracy-check" required>
+                            <label class="small" for="accuracy-check">I certify that the details and documents submitted are accurate and complete.</label>
+                        </div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button type="button" class="btn-reg btn-back" onclick="goToStep(3)">Back</button>
+                        <button type="submit" class="btn-reg btn-next">Submit Application</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-backdrop-lite" id="employment-change-modal" aria-hidden="true">
+    <div class="warning-modal-card" role="dialog" aria-modal="true" aria-labelledby="employment-change-modal-title">
+        <h5 id="employment-change-modal-title">Change employment type?</h5>
+        <p>Changing employment type will clear your uploaded documents. Do you want to continue?</p>
+        <div class="btn-row" style="margin-top: 0; padding-top: 0; border-top: 0;">
+            <button type="button" class="btn-reg btn-back" id="employment-change-cancel">Cancel</button>
+            <button type="button" class="btn-reg btn-next" id="employment-change-confirm">Continue</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ employment_document_requirements_json|json_script:"employment-document-requirements" }}
+<script>
+    const steps = document.querySelectorAll('.reg-step');
+    const chips = document.querySelectorAll('.step-chip');
+    const form = document.getElementById('multi-step-form');
+    const empSelect = document.querySelector('[name="employment_type"]');
+    const authCheck = document.getElementById('auth-check');
+    const accCheck = document.getElementById('accuracy-check');
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const employmentProceedButton = document.getElementById('employment-proceed-button');
+
+    const _empReqEl = document.getElementById('employment-document-requirements');
+    const employmentDocumentRequirements = (_empReqEl && JSON.parse(_empReqEl.textContent)) || {};
+
+    const salariedBox = document.getElementById('salaried-box');
+    const bizBox = document.getElementById('biz-box');
+    const unstableBox = document.getElementById('unstable-box');
+    const coAppBox = document.getElementById('co-app-box');
+    const guarantorBox = document.getElementById('guarantor-box');
+    const riskWarning = document.getElementById('risk-warning');
+    const documentBox = document.getElementById('document-box');
+    const documentSectionTitle = document.getElementById('document-section-title');
+    const documentProgressPill = document.getElementById('document-progress-pill');
+    const documentNote = document.getElementById('document-note');
+    const documentEmptyState = document.getElementById('document-empty-state');
+    const documentSummaryList = document.getElementById('document-summary-list');
+    const documentSummaryItems = document.getElementById('document-summary-items');
+    const documentGlobalError = document.getElementById('document-global-error');
+
+    const employmentChangeModal = document.getElementById('employment-change-modal');
+    const employmentChangeConfirm = document.getElementById('employment-change-confirm');
+    const employmentChangeCancel = document.getElementById('employment-change-cancel');
+
+    const documentSlotOrder = ['employment_document_primary', 'employment_document_secondary'];
+    const documentSlots = {
+        employment_document_primary: {
+            input: document.querySelector('[name="employment_document_primary"]'),
+            card: document.getElementById('employment-doc-primary-card'),
+            label: document.getElementById('employment-doc-primary-label'),
+            help: document.getElementById('employment-doc-primary-help'),
+            status: document.getElementById('employment-doc-primary-status'),
+            meta: document.getElementById('employment-doc-primary-meta'),
+            fileName: document.getElementById('employment-doc-primary-file-name'),
+            fileSize: document.getElementById('employment-doc-primary-file-size'),
+            error: document.getElementById('msg-employment_document_primary'),
+            dropzone: document.getElementById('employment-doc-primary-dropzone'),
+        },
+        employment_document_secondary: {
+            input: document.querySelector('[name="employment_document_secondary"]'),
+            card: document.getElementById('employment-doc-secondary-card'),
+            label: document.getElementById('employment-doc-secondary-label'),
+            help: document.getElementById('employment-doc-secondary-help'),
+            status: document.getElementById('employment-doc-secondary-status'),
+            meta: document.getElementById('employment-doc-secondary-meta'),
+            fileName: document.getElementById('employment-doc-secondary-file-name'),
+            fileSize: document.getElementById('employment-doc-secondary-file-size'),
+            error: document.getElementById('msg-employment_document_secondary'),
+            dropzone: document.getElementById('employment-doc-secondary-dropzone'),
+        },
+    };
+
+    let lastEmploymentType = empSelect.value || '';
+    let pendingEmploymentType = '';
+
+    function getEmploymentConfig(employmentType) {
+        return employmentDocumentRequirements[employmentType] || null;
+    }
+
+    function getRequiredDocuments() {
+        const config = getEmploymentConfig(empSelect.value);
+        return config ? config.documents : [];
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes >= 1024 * 1024) {
+            return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+        }
+        return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    }
+
+    function validateDocumentFile(file) {
+        if (!file) {
+            return '';
+        }
+        const extension = file.name.includes('.')
+            ? file.name.split('.').pop().toLowerCase()
+            : '';
+        if (!['pdf', 'jpg', 'jpeg', 'png'].includes(extension)) {
+            return 'Only PDF, JPG, PNG files are accepted';
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            return 'File size must be under 5MB';
+        }
+        return '';
+    }
+
+    function showMessage(messageId, message) {
+        const node = document.getElementById(messageId);
+        if (node) {
+            node.textContent = message;
+        }
+    }
+
+    function clearMessages(messageIds) {
+        messageIds.forEach((messageId) => showMessage(messageId, ''));
+    }
+
+    function clearDocumentGlobalError() {
+        documentGlobalError.textContent = '';
+    }
+
+    function toggleSubmit() {
+        submitBtn.disabled = !(authCheck.checked && accCheck.checked);
+    }
+
+    function togglePass(targetId, icon) {
+        const field = document.getElementById(targetId);
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.replace('bi-eye-slash', 'bi-eye');
+        } else {
+            field.type = 'password';
+            icon.classList.replace('bi-eye', 'bi-eye-slash');
+        }
+    }
+
+    function goToStep(stepNumber) {
+        steps.forEach((step, index) => {
+            step.classList.toggle('active', index === stepNumber - 1);
+        });
+        chips.forEach((chip, index) => {
+            chip.classList.toggle('active', index === stepNumber - 1);
+            chip.classList.toggle('completed', index < stepNumber - 1);
+        });
+        if (stepNumber === 2) {
+            updateEmploymentDocumentRequirements(empSelect.value || '');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function setDocumentCardState(fieldName, state, message) {
+        const slot = documentSlots[fieldName];
+        if (!slot) {
+            return;
+        }
+
+        slot.card.classList.remove('active', 'invalid');
+        slot.status.classList.remove('uploaded', 'error');
+        slot.meta.classList.remove('visible');
+
+        if (state === 'uploaded') {
+            const file = slot.input.files[0];
+            slot.card.classList.add('active');
+            slot.status.classList.add('uploaded');
+            slot.status.textContent = 'Uploaded';
+            slot.fileName.textContent = file.name;
+            slot.fileSize.textContent = formatFileSize(file.size);
+            slot.meta.classList.add('visible');
+            slot.error.textContent = '';
+            return;
+        }
+
+        if (state === 'error') {
+            slot.card.classList.add('invalid');
+            slot.status.classList.add('error');
+            slot.status.textContent = 'Error';
+            slot.error.textContent = message || slot.error.textContent;
+            return;
+        }
+
+        slot.status.textContent = 'Pending';
+        if (!slot.error.textContent.trim()) {
+            slot.error.textContent = '';
+        }
+    }
+
+    function updateDocumentCard(fieldName) {
+        const slot = documentSlots[fieldName];
+        if (!slot) {
+            return;
+        }
+
+        if (slot.input.files && slot.input.files.length > 0) {
+            const validationError = validateDocumentFile(slot.input.files[0]);
+            if (validationError) {
+                setDocumentCardState(fieldName, 'error', validationError);
+            } else {
+                setDocumentCardState(fieldName, 'uploaded');
+            }
+            return;
+        }
+
+        if (slot.error.textContent.trim()) {
+            setDocumentCardState(fieldName, 'error', slot.error.textContent.trim());
+            return;
+        }
+
+        setDocumentCardState(fieldName, 'pending');
+    }
+
+    function updateDocumentProgress() {
+        const requiredDocuments = getRequiredDocuments();
+        const uploadedCount = requiredDocuments.reduce((count, _doc, index) => {
+            const slot = documentSlots[documentSlotOrder[index]];
+            if (slot && slot.input.files && slot.input.files.length > 0 && !validateDocumentFile(slot.input.files[0])) {
+                return count + 1;
+            }
+            return count;
+        }, 0);
+        documentProgressPill.textContent = `${uploadedCount} of ${requiredDocuments.length} documents uploaded`;
+    }
+
+    function renderDocumentSummary(config) {
+        documentSummaryItems.innerHTML = '';
+        if (!config || !config.documents || !config.documents.length) {
+            documentSummaryList.style.display = 'none';
+            return;
+        }
+
+        config.documents.forEach((definition, index) => {
+            const item = document.createElement('li');
+            const label = document.createElement('strong');
+            label.textContent = `${index + 1}. ${definition.label}`;
+            item.appendChild(label);
+            item.appendChild(document.createTextNode(` - ${definition.description}`));
+            documentSummaryItems.appendChild(item);
+        });
+        documentSummaryList.style.display = 'block';
+    }
+
+    function updateEmploymentProceedState() {
+        const requiredDocuments = getRequiredDocuments();
+        const canProceed = requiredDocuments.length > 0 && requiredDocuments.every((doc, index) => {
+            const slot = documentSlots[documentSlotOrder[index]];
+            return slot && slot.input.files && slot.input.files.length > 0 && !validateDocumentFile(slot.input.files[0]);
+        });
+        employmentProceedButton.disabled = !canProceed;
+        employmentProceedButton.textContent = canProceed
+            ? 'Proceed ->'
+            : 'Proceed -> (Upload all documents to continue)';
+    }
+
+    function clearDocumentField(fieldName) {
+        const slot = documentSlots[fieldName];
+        if (!slot) {
+            return;
+        }
+        slot.input.value = '';
+        slot.fileName.textContent = 'No file selected';
+        slot.fileSize.textContent = '0 KB';
+        slot.error.textContent = '';
+        setDocumentCardState(fieldName, 'pending');
+        updateDocumentProgress();
+        updateEmploymentProceedState();
+    }
+
+    function hasUploadedDocuments() {
+        return documentSlotOrder.some((fieldName) => {
+            const slot = documentSlots[fieldName];
+            return slot && slot.input.files && slot.input.files.length > 0;
+        });
+    }
+
+    function updateEmploymentDocumentRequirements(empType) {
+        const config = getEmploymentConfig(empType);
+        clearDocumentGlobalError();
+        documentBox.style.display = 'block';
+
+        if (!config) {
+            documentSectionTitle.textContent = 'Required Documents';
+            documentNote.style.display = 'none';
+            documentNote.textContent = '';
+            documentEmptyState.style.display = 'block';
+            renderDocumentSummary(null);
+            documentProgressPill.textContent = '0 of 0 documents uploaded';
+            documentSlotOrder.forEach((fieldName) => {
+                const slot = documentSlots[fieldName];
+                slot.card.style.display = 'none';
+            });
+            updateEmploymentProceedState();
+            return;
+        }
+
+        documentEmptyState.style.display = 'none';
+        documentSectionTitle.textContent = `Required Documents for ${config.employment_label}`;
+        documentNote.style.display = config.note ? 'block' : 'none';
+        documentNote.textContent = config.note || '';
+        renderDocumentSummary(config);
+
+        documentSlotOrder.forEach((fieldName, index) => {
+            const slot = documentSlots[fieldName];
+            const definition = config.documents[index];
+            if (!definition) {
+                slot.card.style.display = 'none';
+                slot.error.textContent = '';
+                slot.meta.classList.remove('visible');
+                slot.status.textContent = 'Pending';
+                return;
+            }
+            slot.card.style.display = 'block';
+            slot.label.innerHTML = `${definition.label}<span class="required-star">*</span>`;
+            slot.help.textContent = definition.description;
+            updateDocumentCard(fieldName);
+        });
+
+        updateDocumentProgress();
+        updateEmploymentProceedState();
+    }
+
+    function clearEmploymentSpecificFields(previousType) {
+        if (previousType === 'HOMEMAKER') {
+            document.querySelector('[name="has_co_applicant"]').checked = false;
+            document.querySelector('[name="co_applicant_name"]').value = '';
+            document.querySelector('[name="co_applicant_relationship"]').value = '';
+            document.querySelector('[name="co_applicant_income"]').value = '';
+            clearMessages(['msg-has_co_applicant', 'msg-co_applicant_name', 'msg-co_applicant_relationship', 'msg-co_applicant_income']);
+        }
+        if (previousType === 'STUDENT_UNEMPLOYED') {
+            document.querySelector('[name="guarantor_name"]').value = '';
+            document.querySelector('[name="guarantor_contact"]').value = '';
+            document.querySelector('[name="guarantor_income"]').value = '';
+            clearMessages(['msg-guarantor_name', 'msg-guarantor_contact', 'msg-guarantor_income']);
+        }
+    }
+
+    function applyEmploymentTypeState(value, previousType) {
+        salariedBox.style.display = 'none';
+        bizBox.style.display = 'none';
+        unstableBox.style.display = 'none';
+        coAppBox.style.display = 'none';
+        guarantorBox.style.display = 'none';
+        riskWarning.style.display = 'none';
+
+        if (value === 'SALARIED_GOVT' || value === 'SALARIED_PRIVATE') {
+            salariedBox.style.display = 'block';
+        } else if (value === 'SELF_EMPLOYED_PROFESSIONAL' || value === 'SELF_EMPLOYED_BUSINESS') {
+            bizBox.style.display = 'block';
+        } else if (['DAILY_WAGE', 'SEASONAL', 'GIG_WORKER', 'FARMER'].includes(value)) {
+            unstableBox.style.display = 'block';
+            riskWarning.style.display = 'block';
+        } else if (value === 'PENSIONER' || value === 'NRI') {
+            unstableBox.style.display = 'block';
+        } else if (value === 'HOMEMAKER') {
+            coAppBox.style.display = 'block';
+            document.querySelector('[name="has_co_applicant"]').checked = true;
+        } else if (value === 'STUDENT_UNEMPLOYED') {
+            guarantorBox.style.display = 'block';
+        }
+
+        if (previousType && previousType !== value) {
+            clearEmploymentSpecificFields(previousType);
+        }
+
+        updateEmploymentDocumentRequirements(value);
+    }
+
+    function openEmploymentChangeModal(nextValue) {
+        pendingEmploymentType = nextValue;
+        employmentChangeModal.classList.add('active');
+        employmentChangeModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeEmploymentChangeModal() {
+        employmentChangeModal.classList.remove('active');
+        employmentChangeModal.setAttribute('aria-hidden', 'true');
+        pendingEmploymentType = '';
+    }
+
+    function validateStepOne() {
+        clearMessages(['msg-first_name', 'msg-last_name', 'msg-dob', 'msg-gender', 'msg-email', 'msg-mobile_number', 'msg-city', 'msg-state', 'msg-pin_code']);
+        let isValid = true;
+        const firstName = document.querySelector('[name="first_name"]').value.trim();
+        const lastName = document.querySelector('[name="last_name"]').value.trim();
+        const dob = document.querySelector('[name="dob"]').value;
+        const gender = document.querySelector('[name="gender"]').value;
+        const email = document.querySelector('[name="email"]').value.trim();
+        const mobile = document.querySelector('[name="mobile_number"]').value.trim();
+        const city = document.querySelector('[name="city"]').value.trim();
+        const state = document.querySelector('[name="state"]').value;
+        const pinCode = document.querySelector('[name="pin_code"]').value.trim();
+
+        if (!firstName || !/^[A-Za-z]+$/.test(firstName)) { showMessage('msg-first_name', 'Letters only'); isValid = false; }
+        if (!lastName || !/^[A-Za-z]+$/.test(lastName)) { showMessage('msg-last_name', 'Letters only'); isValid = false; }
+        if (!dob) { showMessage('msg-dob', 'Date of birth required'); isValid = false; }
+        if (!gender) { showMessage('msg-gender', 'Required'); isValid = false; }
+        if (!email || !email.includes('@')) { showMessage('msg-email', 'Valid email required'); isValid = false; }
+        if (!/^\d{10}$/.test(mobile)) { showMessage('msg-mobile_number', '10 digits required'); isValid = false; }
+        if (!city) { showMessage('msg-city', 'Required'); isValid = false; }
+        if (!state) { showMessage('msg-state', 'Required'); isValid = false; }
+        if (!/^\d{6}$/.test(pinCode)) { showMessage('msg-pin_code', '6 digits required'); isValid = false; }
+        return isValid;
+    }
+
+    function validateStepTwo() {
+        clearMessages(['msg-employment_type', 'msg-employer_name', 'msg-monthly_salary', 'msg-business_name', 'msg-annual_income', 'msg-years_in_business', 'msg-average_monthly_income', 'msg-has_co_applicant', 'msg-co_applicant_name', 'msg-co_applicant_relationship', 'msg-co_applicant_income', 'msg-guarantor_name', 'msg-guarantor_contact', 'msg-guarantor_income', 'msg-employment_document_primary', 'msg-employment_document_secondary']);
+        clearDocumentGlobalError();
+        let isValid = true;
+        const empType = empSelect.value;
+        const config = getEmploymentConfig(empType);
+
+        if (!empType) {
+            showMessage('msg-employment_type', 'Required');
+            return false;
+        }
+
+        if (empType === 'SALARIED_GOVT' || empType === 'SALARIED_PRIVATE') {
+            if (!document.querySelector('[name="employer_name"]').value.trim()) { showMessage('msg-employer_name', 'Required'); isValid = false; }
+            if (!document.querySelector('[name="monthly_salary"]').value) { showMessage('msg-monthly_salary', 'Required'); isValid = false; }
+        } else if (empType === 'SELF_EMPLOYED_PROFESSIONAL' || empType === 'SELF_EMPLOYED_BUSINESS') {
+            if (!document.querySelector('[name="business_name"]').value.trim()) { showMessage('msg-business_name', 'Required'); isValid = false; }
+            if (!document.querySelector('[name="annual_income"]').value) { showMessage('msg-annual_income', 'Required'); isValid = false; }
+            if (!document.querySelector('[name="years_in_business"]').value) { showMessage('msg-years_in_business', 'Required'); isValid = false; }
+        } else if (['DAILY_WAGE', 'SEASONAL', 'GIG_WORKER', 'FARMER', 'PENSIONER', 'NRI'].includes(empType)) {
+            if (!document.querySelector('[name="average_monthly_income"]').value) { showMessage('msg-average_monthly_income', 'Required'); isValid = false; }
+        } else if (empType === 'HOMEMAKER') {
+            if (!document.querySelector('[name="has_co_applicant"]').checked) { showMessage('msg-has_co_applicant', 'Co-applicant is mandatory'); isValid = false; }
+            if (!document.querySelector('[name="co_applicant_name"]').value.trim()) { showMessage('msg-co_applicant_name', 'Required'); isValid = false; }
+            if (!document.querySelector('[name="co_applicant_relationship"]').value.trim()) { showMessage('msg-co_applicant_relationship', 'Required'); isValid = false; }
+            if (!document.querySelector('[name="co_applicant_income"]').value) { showMessage('msg-co_applicant_income', 'Required'); isValid = false; }
+        } else if (empType === 'STUDENT_UNEMPLOYED') {
+            if (!document.querySelector('[name="guarantor_name"]').value.trim()) { showMessage('msg-guarantor_name', 'Required'); isValid = false; }
+            if (!/^\d{10}$/.test(document.querySelector('[name="guarantor_contact"]').value.trim())) { showMessage('msg-guarantor_contact', '10 digits required'); isValid = false; }
+            if (!document.querySelector('[name="guarantor_income"]').value) { showMessage('msg-guarantor_income', 'Required'); isValid = false; }
+        }
+
+        if (!config) {
+            documentGlobalError.textContent = 'Please select an employment type first.';
+            return false;
+        }
+
+        config.documents.forEach((documentDefinition, index) => {
+            const fieldName = documentSlotOrder[index];
+            const slot = documentSlots[fieldName];
+            if (!slot.input.files || slot.input.files.length === 0) {
+                setDocumentCardState(fieldName, 'error', `Upload ${documentDefinition.label} to continue.`);
+                isValid = false;
+                return;
+            }
+            const validationError = validateDocumentFile(slot.input.files[0]);
+            if (validationError) {
+                setDocumentCardState(fieldName, 'error', validationError);
+                isValid = false;
+                return;
+            }
+            setDocumentCardState(fieldName, 'uploaded');
+        });
+
+        if (!isValid && config.documents.length) {
+            documentGlobalError.textContent = 'Please upload all required documents to proceed';
+        }
+        updateDocumentProgress();
+        updateEmploymentProceedState();
+        return isValid;
+    }
+
+    function validateStepThree() {
+        clearMessages(['msg-loan_purpose', 'msg-loan_amount_requested', 'msg-existing_emis', 'msg-aadhaar_number', 'msg-pan_number']);
+        let isValid = true;
+        const purpose = document.querySelector('[name="loan_purpose"]').value;
+        const amount = document.querySelector('[name="loan_amount_requested"]').value;
+        const emis = document.querySelector('[name="existing_emis"]').value;
+        const aadhaar = document.querySelector('[name="aadhaar_number"]').value.trim();
+        const pan = document.querySelector('[name="pan_number"]').value.trim().toUpperCase();
+
+        if (!purpose) { showMessage('msg-loan_purpose', 'Required'); isValid = false; }
+        if (!amount || Number(amount) < 1000) { showMessage('msg-loan_amount_requested', 'Minimum INR 1,000'); isValid = false; }
+        if (emis === '') { showMessage('msg-existing_emis', 'Required (enter 0 if none)'); isValid = false; }
+        if (!/^\d{12}$/.test(aadhaar)) { showMessage('msg-aadhaar_number', 'Exactly 12 digits'); isValid = false; }
+        if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) { showMessage('msg-pan_number', 'Format: ABCDE1234F'); isValid = false; }
+        return isValid;
+    }
+
+    function validateAndGoTo(current, target) {
+        if (target < current) {
+            goToStep(target);
+            return;
+        }
+        const isValid = current === 1
+            ? validateStepOne()
+            : current === 2
+                ? validateStepTwo()
+                : validateStepThree();
+        if (isValid) {
+            goToStep(target);
+        }
+    }
+
+    authCheck.addEventListener('change', toggleSubmit);
+    accCheck.addEventListener('change', toggleSubmit);
+
+    documentSlotOrder.forEach((fieldName) => {
+        const slot = documentSlots[fieldName];
+        slot.input.addEventListener('change', () => {
+            clearDocumentGlobalError();
+            if (slot.input.files && slot.input.files.length > 0) {
+                const validationError = validateDocumentFile(slot.input.files[0]);
+                if (validationError) {
+                    slot.input.value = '';
+                    setDocumentCardState(fieldName, 'error', validationError);
+                } else {
+                    setDocumentCardState(fieldName, 'uploaded');
+                }
+            } else {
+                setDocumentCardState(fieldName, 'pending');
+            }
+            updateDocumentProgress();
+            updateEmploymentProceedState();
+        });
+
+        slot.dropzone.addEventListener('click', () => slot.input.click());
+        ['dragenter', 'dragover'].forEach((eventName) => {
+            slot.dropzone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                slot.dropzone.classList.add('dragging');
+            });
+        });
+        ['dragleave', 'dragend', 'drop'].forEach((eventName) => {
+            slot.dropzone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                slot.dropzone.classList.remove('dragging');
+            });
+        });
+        slot.dropzone.addEventListener('drop', (event) => {
+            const file = event.dataTransfer.files[0];
+            if (!file) {
+                return;
+            }
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            slot.input.files = dataTransfer.files;
+            slot.input.dispatchEvent(new Event('change'));
+        });
+    });
+
+    document.querySelectorAll('.document-action-button').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            const input = document.getElementById(event.currentTarget.dataset.inputId);
+            if (event.currentTarget.dataset.action === 'remove') {
+                clearDocumentField(input.name);
+                return;
+            }
+            input.click();
+        });
+    });
+
+    empSelect.addEventListener('change', function() {
+        const nextValue = this.value;
+        if (nextValue === lastEmploymentType) {
+            return;
+        }
+        if (hasUploadedDocuments() && lastEmploymentType) {
+            this.value = lastEmploymentType;
+            openEmploymentChangeModal(nextValue);
+            return;
+        }
+        const previousType = lastEmploymentType;
+        lastEmploymentType = nextValue;
+        applyEmploymentTypeState(nextValue, previousType);
+    });
+
+    employmentChangeConfirm.addEventListener('click', () => {
+        const previousType = lastEmploymentType;
+        documentSlotOrder.forEach((fieldName) => clearDocumentField(fieldName));
+        empSelect.value = pendingEmploymentType;
+        lastEmploymentType = pendingEmploymentType;
+        applyEmploymentTypeState(pendingEmploymentType, previousType);
+        closeEmploymentChangeModal();
+    });
+
+    employmentChangeCancel.addEventListener('click', () => {
+        empSelect.value = lastEmploymentType;
+        closeEmploymentChangeModal();
+    });
+
+    employmentChangeModal.addEventListener('click', (event) => {
+        if (event.target === employmentChangeModal) {
+            empSelect.value = lastEmploymentType;
+            closeEmploymentChangeModal();
+        }
+    });
+
+    form.addEventListener('submit', (event) => {
+        clearMessages(['msg-password', 'msg-confirm_password']);
+        let isValid = true;
+
+        if (!validateStepOne()) {
+            goToStep(1);
+            isValid = false;
+        } else if (!validateStepTwo()) {
+            goToStep(2);
+            isValid = false;
+        } else if (!validateStepThree()) {
+            goToStep(3);
+            isValid = false;
+        }
+
+        const password = document.querySelector('[name="password"]').value;
+        const confirmPassword = document.querySelector('[name="confirm_password"]').value;
+        if (!password) { showMessage('msg-password', 'Password required'); isValid = false; }
+        else if (password.length < 8) { showMessage('msg-password', 'Minimum 8 characters'); isValid = false; }
+        if (password !== confirmPassword) { showMessage('msg-confirm_password', 'Passwords do not match'); isValid = false; }
+        if (!authCheck.checked || !accCheck.checked) {
+            alert('Please accept all legal authorizations to proceed.');
+            isValid = false;
+        }
+
+        if (!isValid) {
+            event.preventDefault();
+        }
+    });
+
+    window.addEventListener('load', () => {
+        toggleSubmit();
+        applyEmploymentTypeState(empSelect.value || '', '');
+        setTimeout(() => {
+            const restoredValue = empSelect.value || '';
+            if (restoredValue !== lastEmploymentType) {
+                const previousType = lastEmploymentType;
+                lastEmploymentType = restoredValue;
+                applyEmploymentTypeState(restoredValue, previousType);
+            } else {
+                updateEmploymentDocumentRequirements(restoredValue);
+            }
+        }, 150);
+        let highestStep = 1;
+        document.querySelectorAll('.error-msg').forEach((errorElement) => {
+            if (errorElement.textContent.trim() !== '') {
+                const stepNode = errorElement.closest('.reg-step');
+                if (stepNode) {
+                    highestStep = Math.max(highestStep, parseInt(stepNode.id.split('-')[1], 10));
+                }
+            }
+        });
+        if (highestStep > 1) {
+            goToStep(highestStep);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Profile | CreditSense AI{% endblock %}
+{% block page_title %}Officer Account Settings{% endblock %}
+
+{% block officer_content %}
+<div class="row g-4">
+    <div class="col-xl-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <div class="d-flex align-items-center mb-4">
+                <div class="avatar-circle me-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                    {{ user.username|first|upper }}
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-muted small mb-0">Officer ID: {{ profile_form.employee_id.value|default:"CS-OFF-001" }}</p>
+                </div>
+            </div>
+            
+            <h6 class="fw-bold text-muted text-uppercase small mb-4 border-bottom pb-2">Account Information</h6>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_action" value="account">
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small text-uppercase">First Name</label>
+                        {{ account_form.first_name }}
+                        {% for error in account_form.first_name.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Last Name</label>
+                        {{ account_form.last_name }}
+                        {% for error in account_form.last_name.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Work Email</label>
+                        {{ account_form.email }}
+                        {% for error in account_form.email.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Institution</label>
+                        {{ profile_form.organization_name }}
+                        {% for error in profile_form.organization_name.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Employee ID</label>
+                        {{ profile_form.employee_id }}
+                        {% for error in profile_form.employee_id.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Branch / Unit</label>
+                        {{ profile_form.branch_name }}
+                        {% for error in profile_form.branch_name.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mt-5 pt-4 border-top d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center bg-light px-3 py-2 rounded-pill">
+                        <i class="bi bi-shield-lock me-2 text-primary"></i>
+                        <span class="text-muted small">Approval Limit: <strong class="text-dark">{{ approval_limit|inr_currency|default:"$0" }}</strong></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <h5 class="fw-bold mb-4">Security</h5>
+            <p class="text-muted small mb-4">Maintain account security by updating your password regularly.</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_action" value="security">
+                <div class="d-grid gap-3">
+                    {% for field in password_form %}
+                    <div class="form-group">
+                        <label class="form-label fw-bold text-muted small text-uppercase">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-outline-dark w-100 rounded-pill mt-4 fw-bold transition-all">Update Password</button>
+            </form>
+        </div>
+        
+        <div class="card bg-primary bg-opacity-10 border-0 rounded-4 p-4">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <i class="bi bi-info-circle-fill text-primary fs-4"></i>
+                <h6 class="fw-bold text-dark mb-0">Need Help?</h6>
+            </div>
+            <p class="text-muted small mb-0">Contact the system administrator if you need to increase your approval limit or update institution details.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+input, select {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #1e293b;
+    background-color: #f8fafc;
+    background-clip: padding-box;
+    border: 1px solid #e2e8f0;
+    appearance: none;
+    border-radius: 0.6rem;
+    transition: all .2s ease;
+}
+input:focus, select:focus {
+    background-color: #fff;
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+}
+.btn-outline-dark:hover {
+    background-color: #1e293b;
+    color: white;
+}
+</style>
+{% endblock %}
+

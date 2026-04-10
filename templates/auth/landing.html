@@ -1,0 +1,194 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}CreditSense AI | Intelligent Credit Risk Assessment{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/landing.css' %}">
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg lp-navbar sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'landing' %}">CreditSense AI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#lpNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="lpNav">
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="#top">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                <li class="nav-item"><a class="nav-link" href="#how-it-works">How It Works</a></li>
+                <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+            </ul>
+            <div class="d-flex align-items-center gap-3">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard-router' %}" class="btn btn-primary-lp py-2 px-4 shadow-none">Dashboard</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn-login text-decoration-none">Login</a>
+                    <a href="{% url 'register' %}" class="btn btn-primary-lp py-2 px-4 shadow-none">Get Started</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock navbar %}
+
+{% block main_wrapper %}
+<main class="landing-page" id="top">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-content">
+                <span class="section-tag mb-4 d-inline-block">AI-Powered Finance</span>
+                <h1 class="hero-heading">Transparent & Intelligent Credit Risk Assessment</h1>
+                <p class="hero-subtext">AI-powered credit scoring with explainable insights using SHAP & LIME. Make data-driven decisions with confidence.</p>
+                <div class="cta-group">
+                    <a href="{% url 'register' %}" class="btn btn-primary-lp px-5 py-3 fs-5">Get Started</a>
+                    <a href="#features" class="btn btn-secondary-lp px-5 py-3 fs-5">Learn More</a>
+                </div>
+                <div class="d-flex justify-content-center align-items-center gap-5 mt-5 pt-4">
+                    <div class="text-center">
+                        <h4 class="fw-bold mb-0 display-6">{{ stats.model_accuracy_percent|floatformat:1 }}%</h4>
+                        <p class="small text-muted mb-0">Model Accuracy</p>
+                    </div>
+                    <div class="vr text-muted opacity-25" style="height: 60px;"></div>
+                    <div class="text-center">
+                        <h4 class="fw-bold mb-0 display-6">{{ stats.predictions }}+</h4>
+                        <p class="small text-muted mb-0">Decisions Made</p>
+                    </div>
+                    <div class="vr text-muted opacity-25" style="height: 60px;"></div>
+                    <div class="text-center">
+                        <h4 class="fw-bold mb-0 display-6">Real-time</h4>
+                        <p class="small text-muted mb-0">Fast Analysis</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section-lp section-bg">
+        <div class="container">
+            <div class="text-center">
+                <span class="section-tag">Why Choose Us</span>
+                <h2 class="section-title">Engineered for Transparency</h2>
+                <p class="section-desc">We go beyond black-box algorithms to provide actionable insights for both lenders and applicants.</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card-lp">
+                        <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                        <h3>AI Credit Scoring</h3>
+                        <p>Our advanced Random Forest models evaluate multiple data points to predict creditworthiness with high precision.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card-lp">
+                        <div class="feature-icon"><i class="bi bi-eye"></i></div>
+                        <h3>Explainable AI</h3>
+                        <p>Using SHAP and LIME to demystify AI decisions, showing exactly which factors influenced the credit score.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card-lp">
+                        <div class="feature-icon"><i class="bi bi-lightning-charge"></i></div>
+                        <h3>Fast Decision Making</h3>
+                        <p>Get instant risk assessments and scoring, reducing wait times from days to seconds.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card-lp">
+                        <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+                        <h3>Secure & Reliable</h3>
+                        <p>We prioritize data security with enterprise-grade encryption and robust fallback systems.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="section-lp">
+        <div class="container">
+            <div class="text-center">
+                <span class="section-tag">Process</span>
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-desc">A simple, transparent process to get your AI-powered credit score.</p>
+            </div>
+            <div class="how-it-works-grid">
+                <div class="step-item">
+                    <div class="step-number-lp">1</div>
+                    <h3>Upload Financial Data</h3>
+                    <p>Securely submit your income, debt, and spending habits to our encrypted platform.</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number-lp">2</div>
+                    <h3>AI Model Analysis</h3>
+                    <p>Our ensemble models process your data, identifying patterns and calculating risk levels.</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-number-lp">3</div>
+                    <h3>Get Score + Explanation</h3>
+                    <p>Receive your detailed credit score along with a transparent breakdown of why you got it.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section-lp section-bg">
+        <div class="container">
+            <div class="about-box">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <p class="about-text">
+                            "CreditSense AI uses machine learning and explainable AI to provide transparent, fair, and reliable credit risk predictions."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact" class="lp-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <a class="footer-logo" href="#">CreditSense AI</a>
+                    <p class="text-muted">Empowering financial institutions with transparent, AI-driven credit intelligence.</p>
+                </div>
+                <div class="col-md-4 col-lg-2 ms-lg-auto">
+                    <h5 class="fw-bold mb-3">Links</h5>
+                    <ul class="footer-links">
+                        <li><a href="#top">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#how-it-works">How It Works</a></li>
+                        <li><a href="#about">About</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <h5 class="fw-bold mb-3">Platform</h5>
+                    <ul class="footer-links">
+                        <li><a href="{% url 'login' %}">Login</a></li>
+                        <li><a href="{% url 'register' %}">Register</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 col-lg-3">
+                    <h5 class="fw-bold mb-3">Contact</h5>
+                    <ul class="footer-links">
+                        <li><a href="mailto:support@creditsense.ai">support@creditsense.ai</a></li>
+                        <li><span class="text-muted">New York, NY 10001</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom text-center">
+                <p class="mb-0">&copy; 2026 CreditSense AI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</main>
+{% endblock main_wrapper %}

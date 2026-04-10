@@ -1,0 +1,159 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Notifications | CreditSense AI{% endblock %}
+{% block page_title %}Notifications & Alerts{% endblock %}
+
+{% block officer_content %}
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+    <div>
+        <h1 class="display-6 fw-bold text-dark mb-2">Officer Notifications</h1>
+        <p class="text-secondary fs-6 mb-0">
+            New applications, fraud signals, document issues, and policy notices collected from live platform activity.
+        </p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- New Applications -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <div class="d-flex align-items-center mb-4">
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary mb-0 me-3" style="width: 35px; height: 35px; font-size: 1rem; border-radius: 8px;">
+                    <i class="bi bi-person-plus-fill"></i>
+                </div>
+                <h6 class="fw-bold text-muted text-uppercase small mb-0">New Applications Assigned</h6>
+            </div>
+            
+            <div class="d-grid gap-3">
+                {% for application in new_applications %}
+                <div class="p-3 bg-light rounded-4 border-start border-primary border-4 shadow-sm transition-all hover-lift">
+                    <div class="fw-bold text-dark mb-1">{{ application.user.get_full_name|default:application.user.username }}</div>
+                    <div class="text-muted small mb-2">#{{ application.id }} | Requested {{ application.loan_amnt|inr_currency }}</div>
+                    <a href="{% url 'bank_officer:application-detail' application.id %}" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">View Details</a>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 text-muted small bg-light rounded-4 border border-dashed">
+                    <i class="bi bi-check2-circle display-6 mb-2 opacity-25"></i>
+                    <p class="mb-0">All assigned applications reviewed.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- High-Risk Alerts -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <div class="d-flex align-items-center mb-4">
+                <div class="stat-icon bg-danger bg-opacity-10 text-danger mb-0 me-3" style="width: 35px; height: 35px; font-size: 1rem; border-radius: 8px;">
+                    <i class="bi bi-shield-exclamation"></i>
+                </div>
+                <h6 class="fw-bold text-muted text-uppercase small mb-0">High-Risk Alerts</h6>
+            </div>
+
+            <div class="d-grid gap-3">
+                {% for alert in fraud_notifications %}
+                <div class="p-3 bg-danger bg-opacity-10 rounded-4 border-start border-danger border-4 shadow-sm transition-all hover-lift">
+                    <div class="fw-bold text-danger mb-1">{{ alert.display_alert_type }}</div>
+                    <div class="text-muted small mb-2">Applicant: {{ alert.user.get_full_name|default:alert.user.username }}</div>
+                    <a href="{% url 'bank_officer:fraud-alerts' %}" class="btn btn-danger btn-sm rounded-pill px-3 fw-bold">Investigate</a>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 text-muted small bg-light rounded-4 border border-dashed">
+                    <i class="bi bi-shield-check display-6 mb-2 opacity-25 text-success"></i>
+                    <p class="mb-0">No active high-risk alerts.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Issues -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <div class="d-flex align-items-center mb-4">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning mb-0 me-3" style="width: 35px; height: 35px; font-size: 1rem; border-radius: 8px;">
+                    <i class="bi bi-file-earmark-check-fill"></i>
+                </div>
+                <h6 class="fw-bold text-muted text-uppercase small mb-0">Document Issues</h6>
+            </div>
+
+            <div class="d-grid gap-3">
+                {% for application in document_reviews %}
+                <div class="p-3 bg-warning bg-opacity-10 rounded-4 border-start border-warning border-4 shadow-sm transition-all hover-lift">
+                    <div class="fw-bold text-dark mb-1">{{ application.user.get_full_name|default:application.user.username }}</div>
+                    <div class="text-muted small mb-2 text-truncate">File: {{ application.user.financial_profile.income_proof_filename }}</div>
+                    <a href="{% url 'bank_officer:document_verification' %}" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold">Verify Documents</a>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 text-muted small bg-light rounded-4 border border-dashed">
+                    <i class="bi bi-patch-check display-6 mb-2 opacity-25 text-warning"></i>
+                    <p class="mb-0">No documents pending review.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-xl-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <div class="d-flex align-items-center mb-4">
+                <div class="stat-icon bg-info bg-opacity-10 text-info mb-0 me-3" style="width: 35px; height: 35px; font-size: 1rem; border-radius: 8px;">
+                    <i class="bi bi-megaphone-fill"></i>
+                </div>
+                <h6 class="fw-bold text-muted text-uppercase small mb-0">Admin Announcements</h6>
+            </div>
+
+            <div class="d-grid gap-3">
+                {% for announcement in announcements %}
+                <div class="p-3 bg-light rounded-4 border-start border-info border-4 shadow-sm transition-all hover-lift">
+                    <div class="fw-bold text-dark mb-1">{{ announcement.title }}</div>
+                    <div class="text-muted small mb-0">{{ announcement.message }}</div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 text-muted small bg-light rounded-4 border border-dashed">
+                    <i class="bi bi-bell display-6 mb-2 opacity-25 text-info"></i>
+                    <p class="mb-0">No active admin announcements.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <div class="d-flex align-items-center mb-4">
+                <div class="stat-icon bg-success bg-opacity-10 text-success mb-0 me-3" style="width: 35px; height: 35px; font-size: 1rem; border-radius: 8px;">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <h6 class="fw-bold text-muted text-uppercase small mb-0">Verification Requests</h6>
+            </div>
+
+            <div class="d-grid gap-3">
+                {% for application in verification_requests %}
+                <div class="p-3 bg-success bg-opacity-10 rounded-4 border-start border-success border-4 shadow-sm transition-all hover-lift">
+                    <div class="fw-bold text-dark mb-1">{{ application.user.get_full_name|default:application.user.username }}</div>
+                    <div class="text-muted small mb-2">Application #{{ application.id }} needs follow-up review.</div>
+                    <a href="{% url 'bank_officer:decision' application.id %}" class="btn btn-success btn-sm rounded-pill px-3 fw-bold">Resume Review</a>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 text-muted small bg-light rounded-4 border border-dashed">
+                    <i class="bi bi-check2-all display-6 mb-2 opacity-25 text-success"></i>
+                    <p class="mb-0">No verification requests pending.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.075) !important;
+}
+</style>
+{% endblock %}

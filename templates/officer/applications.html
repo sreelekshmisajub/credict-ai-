@@ -1,0 +1,127 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Applications Queue | CreditSense AI{% endblock %}
+{% block page_title %}Applications Queue{% endblock %}
+
+{% block officer_content %}
+<div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-lg-4">
+            <label class="form-label fw-bold small text-muted text-uppercase">Search</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" value="{{ search_query }}" class="form-control border-start-0" placeholder="Name, Email or ID...">
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label fw-bold small text-muted text-uppercase">Risk Level</label>
+            <select name="risk" class="form-select">
+                <option value="">All Risks</option>
+                {% for risk in risk_options %}
+                <option value="{{ risk }}" {% if selected_risk == risk %}selected{% endif %}>{{ risk }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label fw-bold small text-muted text-uppercase">Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                {% for value, label in status_options %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label fw-bold small text-muted text-uppercase">Loan Type</label>
+            <select name="loan_type" class="form-select">
+                <option value="">All Types</option>
+                <option value="PERSONAL" {% if request.GET.loan_type == 'PERSONAL' %}selected{% endif %}>Personal</option>
+                <option value="EDUCATION" {% if request.GET.loan_type == 'EDUCATION' %}selected{% endif %}>Education</option>
+                <option value="MEDICAL" {% if request.GET.loan_type == 'MEDICAL' %}selected{% endif %}>Medical</option>
+                <option value="VENTURE" {% if request.GET.loan_type == 'VENTURE' %}selected{% endif %}>Venture</option>
+                <option value="HOMEIMPROVEMENT" {% if request.GET.loan_type == 'HOMEIMPROVEMENT' %}selected{% endif %}>Home Improvement</option>
+            </select>
+        </div>
+        <div class="col-lg-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 rounded-pill">Filter</button>
+            <a href="{% url 'bank_officer:applications' %}" class="btn btn-light rounded-pill"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Applicant</th>
+                    <th>Loan Amount</th>
+                    <th>Employment</th>
+                    <th>Risk Score</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for application in applications %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle me-3" style="width: 35px; height: 35px; font-size: 0.9rem;">
+                                {{ application.user.username|first|upper }}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark">{{ application.user.get_full_name|default:application.user.username }}</div>
+                                <div class="text-muted small">{{ application.user.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ application.loan_amnt|inr_currency }}</div>
+                        <div class="text-muted small">{{ application.get_loan_intent_display|default:application.loan_intent }}</div>
+                    </td>
+                    <td>
+                        <span class="text-dark">{{ application.emp_length|default:"0"|floatformat:0 }} Years</span>
+                        <div class="text-muted small">{{ application.get_person_home_ownership_display|default:"Rented" }}</div>
+                    </td>
+                    <td>
+                        {% if application.prediction %}
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 8px; width: 80px; border-radius: 10px;">
+                                <div class="progress-bar {% if application.prediction.risk_probability > 0.7 %}bg-danger{% elif application.prediction.risk_probability > 0.4 %}bg-warning{% else %}bg-success{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ application.prediction.risk_probability|multiply:100 }}%"></div>
+                            </div>
+                            <span class="fw-bold {% if application.prediction.risk_probability > 0.7 %}text-danger{% elif application.prediction.risk_probability > 0.4 %}text-warning{% else %}text-success{% endif %}">
+                                {{ application.prediction.risk_probability|multiply:100|floatformat:0 }}
+                            </span>
+                        </div>
+                        {% else %}
+                        <span class="badge bg-light text-muted fw-normal">PENDING AI</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge-status {% if application.status == 'APPROVED' %}status-approved{% elif application.status == 'REJECTED' %}status-rejected{% else %}status-pending{% endif %}">
+                            {{ application.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <a href="{% url 'bank_officer:application-detail' application.id %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">View Details</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="py-4">
+                            <i class="bi bi-inbox text-muted display-4"></i>
+                            <p class="text-muted mt-3">No applications found matching your criteria.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

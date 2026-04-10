@@ -1,0 +1,97 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Prediction Detail | CreditSense AI{% endblock %}
+
+{% block content %}
+<div class="section-heading">
+    <div>
+        <h1 class="mb-2">Prediction detail</h1>
+        <p class="muted-text mb-0">Detailed explainability and fraud context for application #{{ application.id }}.</p>
+    </div>
+    <a href="{% url 'users:history' %}" class="btn btn-outline-light rounded-pill px-4">Back to history</a>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="metric-card h-100">
+            <div class="metric-label">Credit score</div>
+            <div class="metric-value">{{ prediction.credit_score }}</div>
+            <div class="muted-text">{{ prediction.risk_category }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card h-100">
+            <div class="metric-label">Risk probability</div>
+            <div class="metric-value">{{ prediction.risk_probability }}</div>
+            <div class="muted-text">Model: {{ prediction.model_name }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card h-100">
+            <div class="metric-label">Loan decision</div>
+            <div class="metric-value">{{ application.get_status_display }}</div>
+            <div class="muted-text">{{ application.loan_intent }} request</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="panel-card h-100">
+            <h2 class="h5 mb-3">SHAP explanations</h2>
+            <div class="feature-list">
+                {% for key, value in prediction.shap_explanations.items %}
+                    <div class="feature-row">
+                        <span>{{ key }}</span>
+                        <strong>{{ value }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="panel-card h-100">
+            <h2 class="h5 mb-3">LIME explanations</h2>
+            <div class="feature-list">
+                {% for key, value in prediction.lime_explanations.items %}
+                    <div class="feature-row">
+                        <span>{{ key }}</span>
+                        <strong>{{ value }}</strong>
+                    </div>
+                {% empty %}
+                    <p class="muted-text mb-0">No LIME explanation was generated.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="panel-card h-100">
+            <h2 class="h5 mb-3">Recommendations</h2>
+            {% for recommendation in recommendations %}
+                <div class="glass-card mb-3">
+                    <div class="metric-label mb-2">{{ recommendation.category }}</div>
+                    <p class="mb-0">{{ recommendation.message }}</p>
+                </div>
+            {% empty %}
+                <p class="muted-text mb-0">No recommendations available.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="panel-card mt-4">
+    <h2 class="h5 mb-3">Fraud alerts</h2>
+    {% for alert in alerts %}
+        <div class="glass-card mb-3">
+            <div class="d-flex justify-content-between gap-3">
+                <strong>{{ alert.display_alert_type }}</strong>
+                <span class="status-pill rejected">{{ alert.severity }}</span>
+            </div>
+            <p class="my-2">{{ alert.description }}</p>
+            <small class="muted-text">{{ alert.recommended_action }}</small>
+        </div>
+    {% empty %}
+        <p class="muted-text mb-0">No fraud alerts were generated for this application.</p>
+    {% endfor %}
+</div>
+{% endblock %}

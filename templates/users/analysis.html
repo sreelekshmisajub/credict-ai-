@@ -1,0 +1,63 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Credit Analysis | CreditSense AI{% endblock %}
+
+{% block content %}
+<div class="section-heading">
+    <div>
+        <h1 class="mb-2">Credit score analysis</h1>
+        <p class="muted-text mb-0">Submit the real financial attributes used by the dataset-backed ML engine.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="panel-card">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h2 class="h5 mb-3">Financial profile</h2>
+                        {% for field in financial_form %}
+                            <div class="mb-3">
+                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <h2 class="h5 mb-3">Loan application</h2>
+                        {% for field in application_form %}
+                            <div class="mb-3">
+                                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button class="btn btn-accent rounded-pill px-4 mt-3" type="submit">Predict credit risk</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="panel-card">
+            <h2 class="h5 mb-3">Model notes</h2>
+            <p class="muted-text">The current engine trains on the real `dataset/credit_risk_dataset.csv` file and returns a credit score, risk category, SHAP signals, and LIME explanations for every prediction.</p>
+            {% if latest_prediction %}
+                <div class="glass-card mt-4">
+                    <div class="metric-label">Latest result</div>
+                    <div class="metric-value">{{ latest_prediction.credit_score }}</div>
+                    <div class="muted-text">{{ latest_prediction.risk_category }}</div>
+                    <a class="btn btn-outline-light rounded-pill px-3 mt-3" href="{% url 'credit_prediction:detail' latest_prediction.id %}">Open details</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

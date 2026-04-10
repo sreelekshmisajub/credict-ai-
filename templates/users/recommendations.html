@@ -1,0 +1,121 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% load display_formatters %}
+
+{% block title %}Credit Improvement Tips | CreditSense AI{% endblock %}
+
+{% block user_content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="saas-card bg-primary text-white border-0 shadow-lg" style="background: linear-gradient(135deg, #0066ff 0%, #0044bb 100%);">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h3 class="fw-bold mb-2">Credit Improvement Suggestions</h3>
+                    <p class="opacity-75 mb-0">
+                        {% if latest_prediction %}
+                            These saved recommendations were generated from your latest recorded prediction and application profile.
+                        {% else %}
+                            Recommendations will appear here after your first completed credit analysis.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end d-none d-lg-block">
+                    <i class="bi bi-lightbulb-fill display-3 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% if recommendations %}
+        {% for rec in recommendations %}
+            <div class="col-md-6 col-xl-4">
+                <div class="saas-card h-100 d-flex flex-column">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="p-3 rounded-4 bg-primary bg-opacity-10 text-primary fs-4" style="width: 54px; height: 54px; display: grid; place-items: center;">
+                            <i class="bi bi-{% if rec.category == 'DEBT' %}bank{% elif rec.category == 'PAYMENT' %}calendar-check{% elif rec.category == 'HISTORY' %}clock-history{% elif rec.category == 'STABILITY' %}briefcase{% else %}flag{% endif %}"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0">Strategy {{ forloop.counter }}</h6>
+                            <span class="badge bg-{% if rec.priority == 1 %}danger{% elif rec.priority == 2 %}warning text-dark{% else %}success{% endif %} rounded-pill small px-3">
+                                Priority {{ rec.priority }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="text-secondary small flex-grow-1">{{ rec.message }}</p>
+
+                    <div class="mt-4 pt-4 border-top">
+                        <div class="d-flex justify-content-between align-items-center small">
+                            <span class="fw-bold">Category</span>
+                            <span class="text-secondary">{{ rec.get_category_display }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="saas-card py-5 text-center">
+                 <div class="opacity-25 mb-4"><i class="bi bi-emoji-smile fs-1"></i></div>
+                 <h5 class="fw-bold mb-2">No saved recommendations yet</h5>
+                 <p class="text-secondary small mb-0 px-md-5">Once a prediction is generated, any recommendation records stored for your account will appear here.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<div class="mt-5">
+    <h5 class="fw-bold mb-4">Historical Score Evolution</h5>
+    <div class="saas-card">
+        {% if score_trend_points %}
+            <div style="height: 250px;">
+                <canvas id="improvementTrendChart"></canvas>
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-secondary opacity-50">
+                Score history will appear here after you complete more than one prediction.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{{ score_trend_points|json_script:"score-trend-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    const trendData = JSON.parse(document.getElementById("score-trend-data")?.textContent || "[]");
+    
+    // MINI TREND
+    const trendCtx = document.getElementById('improvementTrendChart');
+    if (trendCtx && trendData.length) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: trendData.map(d => d.label),
+                datasets: [{
+                    label: 'Calculated Score',
+                    data: trendData.map(d => d.score),
+                    borderColor: '#0066ff',
+                    backgroundColor: 'rgba(0, 102, 255, 0.05)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    y: { min: 300, max: 850, border: { display: false }, grid: { color: '#f1f5f9' } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+</script>
+{% endblock %}

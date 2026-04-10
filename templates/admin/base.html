@@ -1,0 +1,645 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Admin | CreditSense AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --admin-sidebar-width: 286px;
+        --admin-sidebar-bg: #0f172a;
+        --admin-sidebar-border: rgba(148, 163, 184, 0.14);
+        --admin-panel-bg: #ffffff;
+        --admin-panel-border: #e2e8f0;
+        --admin-surface: #f8fafc;
+        --admin-text: #0f172a;
+        --admin-muted: #64748b;
+        --admin-accent: #0f62fe;
+        --admin-accent-soft: rgba(15, 98, 254, 0.08);
+        --admin-success: #15803d;
+        --admin-success-soft: rgba(22, 163, 74, 0.12);
+        --admin-warning: #b45309;
+        --admin-warning-soft: rgba(245, 158, 11, 0.14);
+        --admin-danger: #b91c1c;
+        --admin-danger-soft: rgba(239, 68, 68, 0.12);
+        --admin-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.35);
+    }
+
+    body {
+        background:
+            radial-gradient(circle at top left, rgba(15, 98, 254, 0.07), transparent 22%),
+            radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.08), transparent 20%),
+            var(--admin-surface);
+        color: var(--admin-text);
+        overflow-x: hidden;
+    }
+
+    .admin-shell {
+        min-height: 100vh;
+    }
+
+    .admin-sidebar {
+        width: var(--admin-sidebar-width);
+        position: fixed;
+        inset: 0 auto 0 0;
+        background: linear-gradient(180deg, #08101f, var(--admin-sidebar-bg));
+        border-right: 1px solid var(--admin-sidebar-border);
+        padding: 1.4rem 1rem 1rem;
+        display: flex;
+        flex-direction: column;
+        z-index: 1040;
+        transition: transform 0.25s ease;
+    }
+
+    .admin-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 0.35rem 0.6rem 1.35rem;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .admin-brand-mark {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #2563eb, #0ea5e9);
+        box-shadow: 0 16px 28px -20px rgba(37, 99, 235, 0.8);
+        font-size: 1.2rem;
+    }
+
+    .admin-brand-copy {
+        min-width: 0;
+    }
+
+    .admin-brand-title {
+        display: block;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .admin-brand-subtitle {
+        display: block;
+        color: rgba(226, 232, 240, 0.74);
+        font-size: 0.76rem;
+        margin-top: 0.1rem;
+    }
+
+    .admin-nav {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 0.15rem;
+    }
+
+    .admin-nav-group {
+        margin-bottom: 0.85rem;
+    }
+
+    .admin-nav-label {
+        display: block;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(148, 163, 184, 0.72);
+    }
+
+    .admin-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.82rem 0.95rem;
+        margin-bottom: 0.2rem;
+        border-radius: 16px;
+        color: #cbd5e1;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    }
+
+    .admin-nav-link:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        transform: translateX(2px);
+    }
+
+    .admin-nav-link.active {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.94), rgba(14, 165, 233, 0.92));
+        color: #fff;
+        box-shadow: 0 18px 30px -24px rgba(37, 99, 235, 0.85);
+    }
+
+    .admin-nav-link i {
+        font-size: 1rem;
+        width: 1.25rem;
+        text-align: center;
+    }
+
+    .admin-sidebar-footer {
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--admin-sidebar-border);
+    }
+
+    .admin-main {
+        margin-left: var(--admin-sidebar-width);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .admin-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+        height: 74px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0 1.5rem;
+        background: rgba(248, 250, 252, 0.88);
+        backdrop-filter: blur(14px);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .admin-topbar-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--admin-muted);
+        font-size: 0.85rem;
+    }
+
+    .admin-system-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        background: var(--admin-success-soft);
+        color: var(--admin-success);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .admin-userbox {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    .admin-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #dbeafe, #eff6ff);
+        display: grid;
+        place-items: center;
+        color: var(--admin-accent);
+        font-weight: 800;
+    }
+
+    .admin-user-copy {
+        line-height: 1.25;
+    }
+
+    .admin-user-copy strong {
+        display: block;
+        font-size: 0.9rem;
+    }
+
+    .admin-user-copy span {
+        color: var(--admin-muted);
+        font-size: 0.76rem;
+    }
+
+    .admin-content {
+        padding: 1.6rem;
+        display: grid;
+        gap: 1.25rem;
+    }
+
+    .admin-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .admin-page-title {
+        margin: 0;
+        font-size: clamp(1.8rem, 2vw, 2.4rem);
+        letter-spacing: -0.05em;
+    }
+
+    .admin-page-subtitle {
+        margin: 0.45rem 0 0;
+        color: var(--admin-muted);
+        max-width: 56rem;
+        line-height: 1.65;
+    }
+
+    .admin-panel,
+    .saas-card {
+        background: var(--admin-panel-bg);
+        border: 1px solid var(--admin-panel-border);
+        border-radius: 24px;
+        box-shadow: var(--admin-shadow);
+        padding: 1.2rem;
+    }
+
+    .admin-panel {
+        padding: 1.2rem;
+    }
+
+    .admin-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .admin-panel-title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .admin-panel-subtitle {
+        margin: 0.35rem 0 0;
+        color: var(--admin-muted);
+        font-size: 0.88rem;
+        line-height: 1.55;
+    }
+
+    .admin-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .admin-kpi-card {
+        padding: 1.1rem 1.15rem;
+        border-radius: 22px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92));
+    }
+
+    .admin-kpi-label {
+        display: block;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--admin-muted);
+        margin-bottom: 0.55rem;
+    }
+
+    .admin-kpi-value {
+        display: block;
+        font-size: clamp(1.45rem, 2vw, 2.1rem);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.04em;
+    }
+
+    .admin-kpi-meta {
+        display: block;
+        margin-top: 0.45rem;
+        color: var(--admin-muted);
+        font-size: 0.82rem;
+    }
+
+    .admin-filter-bar {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .admin-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.9rem;
+        align-items: end;
+    }
+
+    .admin-list {
+        display: grid;
+        gap: 0.85rem;
+    }
+
+    .admin-list-item {
+        padding: 1rem;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(248, 250, 252, 0.8);
+    }
+
+    .admin-table-wrap {
+        overflow-x: auto;
+    }
+
+    .admin-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .admin-table thead th {
+        padding: 0.95rem 1rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+        color: var(--admin-muted);
+        font-size: 0.73rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .admin-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.92);
+        vertical-align: top;
+    }
+
+    .admin-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .admin-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.38rem 0.72rem;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+    }
+
+    .admin-chip-success,
+    .status-active {
+        background: var(--admin-success-soft);
+        color: var(--admin-success);
+    }
+
+    .admin-chip-warning,
+    .status-warning {
+        background: var(--admin-warning-soft);
+        color: var(--admin-warning);
+    }
+
+    .admin-chip-danger,
+    .status-danger {
+        background: var(--admin-danger-soft);
+        color: var(--admin-danger);
+    }
+
+    .admin-chip-neutral {
+        background: rgba(15, 23, 42, 0.06);
+        color: #334155;
+    }
+
+    .admin-empty {
+        padding: 2rem 1.2rem;
+        border-radius: 22px;
+        border: 1px dashed rgba(148, 163, 184, 0.35);
+        background: rgba(255, 255, 255, 0.7);
+        text-align: center;
+        color: var(--admin-muted);
+    }
+
+    .admin-note {
+        padding: 0.95rem 1rem;
+        border-radius: 18px;
+        background: rgba(15, 98, 254, 0.06);
+        color: #1d4ed8;
+        border: 1px solid rgba(15, 98, 254, 0.12);
+        font-size: 0.88rem;
+        line-height: 1.55;
+    }
+
+    .admin-muted {
+        color: var(--admin-muted);
+    }
+
+    .admin-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.95rem;
+    }
+
+    .admin-field label,
+    .admin-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: var(--admin-muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .admin-field input,
+    .admin-field select,
+    .admin-field textarea,
+    .admin-filter-grid input,
+    .admin-filter-grid select {
+        width: 100%;
+        padding: 0.72rem 0.9rem;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: #f8fafc;
+        color: var(--admin-text);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .admin-field input:focus,
+    .admin-field select:focus,
+    .admin-field textarea:focus,
+    .admin-filter-grid input:focus,
+    .admin-filter-grid select:focus {
+        outline: none;
+        background: #fff;
+        border-color: rgba(15, 98, 254, 0.45);
+        box-shadow: 0 0 0 4px rgba(15, 98, 254, 0.09);
+    }
+
+    .admin-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .admin-actions .btn,
+    .admin-page-header .btn {
+        border-radius: 999px;
+        padding-inline: 1rem;
+        font-weight: 700;
+    }
+
+    .admin-mobile-toggle {
+        display: none;
+        border: none;
+        background: transparent;
+        color: var(--admin-text);
+        font-size: 1.35rem;
+    }
+
+    @media (max-width: 991px) {
+        .admin-mobile-toggle {
+            display: inline-flex;
+        }
+
+        .admin-sidebar {
+            transform: translateX(-100%);
+        }
+
+        .admin-sidebar.show {
+            transform: translateX(0);
+        }
+
+        .admin-main {
+            margin-left: 0;
+        }
+
+        .admin-content {
+            padding: 1rem;
+        }
+
+        .admin-topbar {
+            padding: 0 1rem;
+        }
+
+        .admin-user-copy {
+            display: none;
+        }
+    }
+</style>
+{% block admin_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar">
+        <a href="{% url 'admin_panel:dashboard' %}" class="admin-brand">
+            <span class="admin-brand-mark"><i class="bi bi-shield-lock-fill"></i></span>
+            <span class="admin-brand-copy">
+                <span class="admin-brand-title">CreditSense Admin</span>
+                <span class="admin-brand-subtitle">Operations and governance</span>
+            </span>
+        </a>
+
+        <nav class="admin-nav">
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">Overview</span>
+                <a href="{% url 'admin_panel:dashboard' %}" class="admin-nav-link {% if admin_section == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i><span>Admin Dashboard</span>
+                </a>
+                <a href="{% url 'admin_panel:analytics' %}" class="admin-nav-link {% if admin_section == 'analytics' %}active{% endif %}">
+                    <i class="bi bi-bar-chart-line"></i><span>Analytics</span>
+                </a>
+                <a href="{% url 'admin_panel:activity-logs' %}" class="admin-nav-link {% if admin_section == 'activity-logs' %}active{% endif %}">
+                    <i class="bi bi-journal-text"></i><span>Activity Logs</span>
+                </a>
+            </div>
+
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">Operations</span>
+                <a href="{% url 'admin_panel:user-management' %}" class="admin-nav-link {% if admin_section == 'users' %}active{% endif %}">
+                    <i class="bi bi-people"></i><span>User Management</span>
+                </a>
+                <a href="{% url 'admin_panel:officer-management' %}" class="admin-nav-link {% if admin_section == 'officers' %}active{% endif %}">
+                    <i class="bi bi-person-badge"></i><span>Officer Management</span>
+                </a>
+                <a href="{% url 'admin_panel:application-monitoring' %}" class="admin-nav-link {% if admin_section == 'applications' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-text"></i><span>Application Monitoring</span>
+                </a>
+                <a href="{% url 'admin_panel:document-verification' %}" class="admin-nav-link {% if admin_section == 'document-verification' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-check"></i><span>Document Verification</span>
+                </a>
+                <a href="{% url 'admin_panel:announcements' %}" class="admin-nav-link {% if admin_section == 'announcements' %}active{% endif %}">
+                    <i class="bi bi-megaphone"></i><span>Announcements</span>
+                </a>
+            </div>
+
+            <div class="admin-nav-group">
+                <span class="admin-nav-label">Risk and Models</span>
+                <a href="{% url 'admin_panel:fraud-monitoring' %}" class="admin-nav-link {% if admin_section == 'fraud-monitoring' %}active{% endif %}">
+                    <i class="bi bi-shield-exclamation"></i><span>Fraud Monitoring</span>
+                </a>
+                <a href="{% url 'admin_panel:model-monitoring' %}" class="admin-nav-link {% if admin_section == 'model-monitoring' %}active{% endif %}">
+                    <i class="bi bi-cpu"></i><span>Model Monitoring</span>
+                </a>
+                <a href="{% url 'admin_panel:risk-analysis' %}" class="admin-nav-link {% if admin_section == 'risk-analysis' %}active{% endif %}">
+                    <i class="bi bi-graph-up-arrow"></i><span>Risk Analysis</span>
+                </a>
+                <a href="{% url 'admin_panel:risk-configuration' %}" class="admin-nav-link {% if admin_section == 'risk-configuration' %}active{% endif %}">
+                    <i class="bi bi-sliders"></i><span>Risk Configuration</span>
+                </a>
+                <a href="{% url 'admin_panel:settings' %}" class="admin-nav-link {% if admin_section == 'settings' %}active{% endif %}">
+                    <i class="bi bi-gear"></i><span>Settings</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+            <a href="{% url 'logout' %}" class="admin-nav-link">
+                <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="admin-main">
+        <header class="admin-topbar">
+            <div class="admin-topbar-meta">
+                <button class="admin-mobile-toggle" type="button" onclick="document.getElementById('adminSidebar').classList.toggle('show')">
+                    <i class="bi bi-list"></i>
+                </button>
+                <span class="admin-system-pill"><i class="bi bi-check-circle-fill"></i> Admin Panel</span>
+            </div>
+
+            <div class="admin-userbox">
+                <div class="admin-user-copy">
+                    <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                    <span>Platform administrator</span>
+                </div>
+                <div class="admin-avatar">
+                    {{ request.user.get_full_name|default:request.user.username|make_list|first|upper }}
+                </div>
+            </div>
+        </header>
+
+        <main class="admin-content">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} border-0 rounded-4 shadow-sm mb-0">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block admin_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock main_wrapper %}
+
+{% block extra_js %}
+{% block admin_js %}{% endblock %}
+{% endblock %}

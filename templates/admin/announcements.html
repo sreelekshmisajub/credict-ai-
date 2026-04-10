@@ -1,0 +1,109 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Announcements | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Announcements</h1>
+        <p class="admin-page-subtitle">Publish operational updates, security notices, and user-facing service messages from one editorial workspace.</p>
+    </div>
+</section>
+
+<section class="admin-kpi-grid">
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Active</span>
+        <span class="admin-kpi-value">{{ active_announcement_count }}</span>
+        <span class="admin-kpi-meta">Messages currently visible to recipients</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Inactive</span>
+        <span class="admin-kpi-value">{{ inactive_announcement_count }}</span>
+        <span class="admin-kpi-meta">Archived or paused notices</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Total</span>
+        <span class="admin-kpi-value">{{ announcements|length }}</span>
+        <span class="admin-kpi-meta">Announcement records stored in the system</span>
+    </article>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-5">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Publish announcement</h2>
+                    <p class="admin-panel-subtitle">Create a new message for all users or a specific role audience.</p>
+                </div>
+            </div>
+            <form method="post" class="admin-filter-bar">
+                {% csrf_token %}
+                {% for field in form %}
+                    {% if field.name == 'is_active' %}
+                        <div class="admin-list-item d-flex justify-content-between align-items-center gap-3">
+                            <div>
+                                <div class="fw-bold">Publish immediately</div>
+                                <div class="admin-muted small mt-1">Turn the announcement on as soon as it is saved.</div>
+                            </div>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" role="switch" name="{{ field.name }}" id="{{ field.id_for_label }}" {% if field.value %}checked{% endif %}>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="admin-field">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+                <div class="admin-actions">
+                    <button class="btn btn-primary" type="submit">Publish announcement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-xl-7">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Announcement history</h2>
+                    <p class="admin-panel-subtitle">Track active and archived notices published from the admin panel.</p>
+                </div>
+            </div>
+            <div class="admin-list">
+                {% for announcement in announcements %}
+                    <div class="admin-list-item">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <div class="fw-bold">{{ announcement.title }}</div>
+                                <div class="admin-muted small mt-1">{{ announcement.get_audience_display }} • {{ announcement.created_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                            <span class="admin-chip {% if announcement.is_active %}admin-chip-success{% else %}admin-chip-warning{% endif %}">
+                                {% if announcement.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </div>
+                        <div class="admin-muted small mt-3">{{ announcement.message }}</div>
+                        <form method="post" class="admin-actions mt-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle">
+                            <input type="hidden" name="announcement_id" value="{{ announcement.id }}">
+                            <button class="btn btn-sm {% if announcement.is_active %}btn-outline-danger{% else %}btn-outline-dark{% endif %}" type="submit">
+                                {% if announcement.is_active %}Archive{% else %}Restore{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                {% empty %}
+                    <div class="admin-empty">No system announcements have been created yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

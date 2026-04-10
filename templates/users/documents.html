@@ -1,0 +1,179 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% load display_formatters %}
+
+{% block title %}Document Center | CreditSense AI{% endblock %}
+
+{% block dashboard_css %}
+<style>
+    .document-card {
+        padding: 32px;
+        background: #fff;
+        border: 1px solid #eef2f6;
+        border-radius: 24px;
+        text-align: center;
+        transition: all 0.2s;
+        height: 100%;
+    }
+    .document-card:hover { border-color: var(--accent); }
+
+    .status-icon-box {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin: 0 auto 20px;
+        display: grid;
+        place-items: center;
+        font-size: 1.5rem;
+    }
+    .box-verified { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .box-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .box-risk { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    .drop-zone {
+        border: 2px dashed #e2e8f0;
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+        background: #f8fafc;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+    }
+</style>
+{% endblock %}
+
+{% block user_content %}
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="saas-card">
+            <h4 class="fw-bold mb-1">Document Center</h4>
+            <p class="text-secondary small mb-0">Upload and review the actual income proof saved on your applicant profile.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-lg-5">
+        <div class="document-card">
+            <div class="status-icon-box {% if document_status.status == 'Verified' %}box-verified{% elif document_status.status == 'Pending' %}box-pending{% else %}box-risk{% endif %}">
+                <i class="bi bi-file-earmark-pdf"></i>
+            </div>
+            <h6 class="fw-bold mb-1">Income Proof</h6>
+            <p class="text-secondary small mb-4">Salary slip or supporting income document</p>
+
+            <div class="badge {% if document_status.status == 'Verified' %}bg-success text-success{% else %}bg-warning text-dark{% endif %} bg-opacity-10 rounded-pill mb-4 px-3">
+                {{ document_status.status }}
+            </div>
+
+            {% if document_status.document_name %}
+                <div class="small text-secondary mb-2">Current file</div>
+                <div class="fw-bold mb-3">{{ document_status.document_name }}</div>
+            {% endif %}
+
+            {% if document_status.uploaded_at %}
+                <div class="small text-secondary mb-2">Last uploaded</div>
+                <div class="fw-bold mb-4">{{ document_status.uploaded_at|date:"M d, Y H:i" }}</div>
+            {% endif %}
+
+            {% if document_status.document_url %}
+                <a href="{{ document_status.document_url }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3 w-100 mb-2">Preview File</a>
+            {% endif %}
+
+            <button class="btn btn-sm btn-primary rounded-pill px-3 w-100" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                {% if document_status.document_url %}Re-upload{% else %}Upload Now{% endif %}
+            </button>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="saas-card h-100">
+            <h5 class="fw-bold mb-3">Document Notes</h5>
+            <div class="vstack gap-3">
+                <div class="p-3 bg-light rounded-4">
+                    <div class="small text-secondary mb-1">Stored status</div>
+                    <div class="fw-bold">{{ document_status.status }}</div>
+                </div>
+                <div class="p-3 bg-light rounded-4">
+                    <div class="small text-secondary mb-1">Accepted use</div>
+                    <div class="fw-bold">Income proof for applicant review</div>
+                </div>
+                <div class="p-3 bg-light rounded-4">
+                    <div class="small text-secondary mb-1">Next step</div>
+                    <div class="fw-bold">
+                        {% if document_status.document_url %}
+                            Re-upload only if the current document is outdated or unreadable.
+                        {% else %}
+                            Upload your income proof to attach it to your profile.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="saas-card">
+    <h5 class="fw-bold mb-4">Upload Income Proof</h5>
+    <div class="drop-zone" data-bs-toggle="modal" data-bs-target="#uploadModal" id="dropZone">
+        <i class="bi bi-cloud-arrow-up display-4 text-secondary mb-3 d-block"></i>
+        <h6 class="fw-bold">Click to select a file</h6>
+        <p class="text-secondary small mb-0">Choose a PDF or image from your device to update your saved income proof.</p>
+    </div>
+</div>
+
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Upload Income Proof</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="form_action" value="upload">
+                <div class="modal-body py-4">
+                    <label class="form-group-label mb-2">Select file (PDF/Image)</label>
+                    <input type="file" name="profile-salary_slip" class="form-control" id="fileInput" required>
+                    <div class="mt-3 opacity-50 small">
+                        Upload a document that belongs to you and reflects your current income.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Submit Verification</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    ['dragover', 'dragleave', 'drop'].forEach(evt => {
+        dropZone.addEventListener(evt, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+        dropZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length) {
+            fileInput.files = files;
+            const modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+            modal.show();
+        }
+    });
+</script>
+{% endblock %}

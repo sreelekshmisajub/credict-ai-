@@ -1,0 +1,144 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% load display_formatters %}
+
+{% block title %}My Applications | CreditSense AI{% endblock %}
+
+{% block user_content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="saas-card">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-4 mb-5">
+                <div>
+                    <h4 class="fw-bold mb-1">My Application Records</h4>
+                    <p class="text-secondary small mb-0">Track and manage all your loan submissions and AI risk reports.</p>
+                </div>
+                
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="input-group input-group-sm" style="width: 280px;">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchInput" class="form-control bg-light border-0" placeholder="Search by intent or ID...">
+                    </div>
+                
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light border dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-funnel me-1"></i> Filter Status
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end rounded-4 shadow-sm border-light">
+                            <li><a class="dropdown-item small filter-btn" href="#" data-status="all">All Submissions</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item small filter-btn" href="#" data-status="APPROVED">Approved Only</a></li>
+                            <li><a class="dropdown-item small filter-btn" href="#" data-status="REJECTED">Rejected Only</a></li>
+                            <li><a class="dropdown-item small filter-btn" href="#" data-status="PENDING">Pending Under Review</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="historyTable">
+                    <thead class="bg-light bg-opacity-50">
+                        <tr>
+                            <th class="py-3 px-4 fw-bold small text-secondary">#</th>
+                            <th class="py-3 fw-bold small text-secondary">SUBMISSION DATE</th>
+                            <th class="py-3 fw-bold small text-secondary">INTENT / PURPOSE</th>
+                            <th class="py-3 fw-bold small text-secondary">RISK SCORE</th>
+                            <th class="py-3 fw-bold small text-secondary">VERDICT</th>
+                            <th class="py-3 text-end px-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for application in applications %}
+                            <tr class="history-row" data-status="{{ application.status }}">
+                                <td class="px-4"><code class="small text-secondary">{{ application.id|stringformat:"05d" }}</code></td>
+                                <td class="small">{{ application.created_at|date:"M d, Y" }}</td>
+                                <td class="fw-bold">{{ application.loan_intent|replace:'_'|title }}</td>
+                                <td>
+                                    {% if application.prediction %}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress rounded-pill flex-grow-1" style="height: 6px; width: 60px;">
+                                                <div class="progress-bar bg-{% if application.prediction.risk_category == 'Low Risk' %}success{% elif application.prediction.risk_category == 'Medium Risk' %}warning{% else %}danger{% endif %}" style="width: {{ application.prediction.risk_probability|multiply:100 }}%;"></div>
+                                            </div>
+                                            <span class="small fw-bold">{{ application.prediction.risk_probability|multiply:100|floatformat:0 }}%</span>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-secondary opacity-50 small">Wait...</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-2">
+                                        <span class="status-badge {% if application.status == 'APPROVED' %}status-approved{% elif application.status == 'REJECTED' %}status-rejected{% else %}status-pending{% endif %}">
+                                            {{ application.get_status_display }}
+                                        </span>
+                                        {% if application.reviewed_by %}
+                                            <span class="small text-secondary">
+                                                Reviewed by {{ application.reviewed_by.get_full_name|default:application.reviewed_by.username }}
+                                            </span>
+                                        {% endif %}
+                                        {% if application.decision_notes %}
+                                            <span class="small text-secondary">{{ application.decision_notes }}</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="text-end px-4">
+                                    <a href="{% url 'users:credit-score' %}?prediction={{ application.prediction.id }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">View Report</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="opacity-25 mb-3"><i class="bi bi-inbox fs-1"></i></div>
+                                    <div class="text-secondary fw-bold">No application records found.</div>
+                                    <a href="{% url 'users:financial-data' %}" class="btn btn-link link-primary px-0 text-decoration-none small mt-2">Start your first analysis &rarr;</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .history-row:hover { background: #f8fafc; }
+    #historyTable thead th { border: none; }
+    #historyTable tbody td { padding: 20px 0; border-bottom: 1px solid #f1f5f9; }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const searchInput = document.getElementById("searchInput");
+        const filterBtns = document.querySelectorAll(".filter-btn");
+        const rows = document.querySelectorAll(".history-row");
+
+        const filterTable = () => {
+            const query = searchInput.value.toLowerCase();
+            const activeStatus = document.querySelector(".filter-btn.active")?.dataset.status || "all";
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                const status = row.dataset.status;
+                const matchesSearch = text.includes(query);
+                const matchesFilter = activeStatus === "all" || status === activeStatus;
+
+                row.style.display = matchesSearch && matchesFilter ? "" : "none";
+            });
+        };
+
+        searchInput.addEventListener("input", filterTable);
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                filterBtns.forEach(b => b.classList.remove("active", "fw-black"));
+                btn.classList.add("active", "fw-black");
+                filterTable();
+            });
+        });
+    });
+</script>
+{% endblock %}

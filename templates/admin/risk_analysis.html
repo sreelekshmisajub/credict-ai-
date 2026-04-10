@@ -1,0 +1,184 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}Risk Analysis | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Risk Analysis</h1>
+        <p class="admin-page-subtitle">Review actual decision mix, purpose-level risk exposure, and recent application flow without relying on placeholder regional dashboards.</p>
+    </div>
+    <div class="admin-actions">
+        <a class="btn btn-outline-dark" href="{% url 'admin_panel:application-monitoring' %}">Open applications</a>
+    </div>
+</section>
+
+<section class="admin-kpi-grid">
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Average Credit Score</span>
+        <span class="admin-kpi-value">{{ analytics.average_credit_score|floatformat:0 }}</span>
+        <span class="admin-kpi-meta">Across all stored predictions</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Default Rate in Training Data</span>
+        <span class="admin-kpi-value">{{ analytics.default_rate_percent|floatformat:1 }}%</span>
+        <span class="admin-kpi-meta">Reference rate from the model dataset</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Loan Amount 95th Percentile</span>
+        <span class="admin-kpi-value">{{ analytics.loan_amount_q95|floatformat:0 }}</span>
+        <span class="admin-kpi-meta">Upper-end request size in training data</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Approval Odds</span>
+        <span class="admin-kpi-value">{{ approval_odds }}</span>
+        <span class="admin-kpi-meta">Approved-to-rejected ratio from recorded outcomes</span>
+    </article>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-7">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Weekly application outcome mix</h2>
+                    <p class="admin-panel-subtitle">Applications created in each recent seven-day window, grouped by current status.</p>
+                </div>
+            </div>
+            <div style="height: 320px;">
+                <canvas id="weeklyOutcomeChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Risk distribution snapshot</h2>
+                    <p class="admin-panel-subtitle">Current prediction counts by risk band.</p>
+                </div>
+            </div>
+            <div class="admin-list">
+                {% for label, value in analytics.risk_breakdown.items %}
+                    <div class="admin-list-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">{{ label }}</div>
+                            <div class="admin-muted small">Stored predictions in this category</div>
+                        </div>
+                        <span class="admin-chip {% if label == 'Low Risk' %}admin-chip-success{% elif label == 'Medium Risk' %}admin-chip-warning{% else %}admin-chip-danger{% endif %}">{{ value }}</span>
+                    </div>
+                {% empty %}
+                    <div class="admin-empty">No prediction data is available yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-7">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Purpose-level risk exposure</h2>
+                    <p class="admin-panel-subtitle">Average default probability and mean score grouped by loan purpose.</p>
+                </div>
+            </div>
+            <div style="height: 320px;">
+                <canvas id="intentRiskChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Purpose summary</h2>
+                    <p class="admin-panel-subtitle">Actual recorded application volume by purpose.</p>
+                </div>
+            </div>
+            <div class="admin-list">
+                {% for row in intent_risk_rows %}
+                    <div class="admin-list-item">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <div class="fw-bold">{{ row.intent }}</div>
+                                <div class="admin-muted small mt-1">{{ row.applications }} applications</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">{{ row.avg_probability|floatformat:1 }}%</div>
+                                <div class="admin-muted small">Avg PD</div>
+                            </div>
+                        </div>
+                        <div class="admin-muted small mt-2">Average score: {{ row.avg_score }}</div>
+                    </div>
+                {% empty %}
+                    <div class="admin-empty">No purpose-level risk data is available yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+{{ weekly_application_summary|json_script:"weekly-application-summary" }}
+{{ intent_risk_rows|json_script:"intent-risk-rows" }}
+{% endblock %}
+
+{% block admin_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    (() => {
+        const weeklySummary = JSON.parse(document.getElementById("weekly-application-summary")?.textContent || "[]");
+        const intentRows = JSON.parse(document.getElementById("intent-risk-rows")?.textContent || "[]");
+
+        const weeklyCanvas = document.getElementById("weeklyOutcomeChart");
+        if (weeklyCanvas && weeklySummary.length) {
+            new Chart(weeklyCanvas, {
+                type: "bar",
+                data: {
+                    labels: weeklySummary.map((item) => item.label),
+                    datasets: [
+                        { label: "Approved", data: weeklySummary.map((item) => item.approved), backgroundColor: "#16a34a", borderRadius: 10 },
+                        { label: "Rejected", data: weeklySummary.map((item) => item.rejected), backgroundColor: "#ef4444", borderRadius: 10 },
+                        { label: "Verification required", data: weeklySummary.map((item) => item.verification_required), backgroundColor: "#f59e0b", borderRadius: 10 },
+                        { label: "Pending", data: weeklySummary.map((item) => item.pending), backgroundColor: "#94a3b8", borderRadius: 10 },
+                    ],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: "bottom" } },
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: "rgba(148, 163, 184, 0.16)" } },
+                    },
+                },
+            });
+        }
+
+        const intentCanvas = document.getElementById("intentRiskChart");
+        if (intentCanvas && intentRows.length) {
+            new Chart(intentCanvas, {
+                type: "bar",
+                data: {
+                    labels: intentRows.map((item) => item.intent),
+                    datasets: [{
+                        label: "Average default probability (%)",
+                        data: intentRows.map((item) => item.avg_probability),
+                        backgroundColor: "rgba(14, 165, 233, 0.78)",
+                        borderRadius: 12,
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, grid: { color: "rgba(148, 163, 184, 0.16)" } },
+                    },
+                },
+            });
+        }
+    })();
+</script>
+{% endblock %}

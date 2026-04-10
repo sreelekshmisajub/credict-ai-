@@ -1,0 +1,101 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Flagged Cases | CreditSense AI{% endblock %}
+{% block page_title %}Flagged & Suspicious Cases{% endblock %}
+
+{% block officer_content %}
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+    <div>
+        <h1 class="display-6 fw-bold text-dark mb-2">Fraud Alerts</h1>
+        <p class="text-secondary fs-6 mb-0">
+            Review suspicious applications, track severity, and escalate high-liability exposure or repeated-submission cases.
+        </p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div class="stat-value">{{ open_alert_count }}</div>
+            <div class="stat-label">Critical Alerts</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                <i class="bi bi-flag-fill"></i>
+            </div>
+            <div class="stat-value">{{ alerts|length }}</div>
+            <div class="stat-label">Flagged by AI/Officer</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon bg-success bg-opacity-10 text-success">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div class="stat-value">{{ resolved_alert_count }}</div>
+            <div class="stat-label">Resolved Cases</div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Applicant</th>
+                    <th>Alert / Reason</th>
+                    <th>Severity</th>
+                    <th>Risk Score</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alert in alerts %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="fw-bold text-dark">{{ alert.user.get_full_name|default:alert.user.username }}</div>
+                        <div class="text-muted small">Application #{{ alert.application.id|default:"N/A" }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ alert.display_alert_type }}</div>
+                        <div class="text-muted small text-truncate" style="max-width: 300px;">{{ alert.description }}</div>
+                    </td>
+                    <td>
+                        <span class="badge {% if alert.severity == 'CRITICAL' %}bg-danger{% elif alert.severity == 'HIGH' %}bg-danger bg-opacity-75{% elif alert.severity == 'MEDIUM' %}bg-warning{% else %}bg-info{% endif %} rounded-pill px-3">
+                            {{ alert.get_severity_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if alert.application.prediction %}
+                            <span class="fw-bold text-dark">{{ alert.application.prediction.credit_score }}</span>
+                        {% else %}
+                            <span class="text-muted">--</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'bank_officer:application-detail' alert.application.id %}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold">Review</a>
+                            <button class="btn btn-danger btn-sm rounded-pill px-3 fw-bold shadow-sm">Forward to Admin</button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">
+                        <i class="bi bi-shield-check display-4 opacity-25"></i>
+                        <p class="mt-3 fs-5">No flagged cases found.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

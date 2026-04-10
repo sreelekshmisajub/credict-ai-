@@ -1,0 +1,103 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Fraud Monitoring | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Fraud Monitoring</h1>
+        <p class="admin-page-subtitle">Investigate suspicious submissions, resolve reviewed alerts, and keep the monitoring queue easy to scan.</p>
+    </div>
+</section>
+
+<section class="admin-kpi-grid">
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Open Alerts</span>
+        <span class="admin-kpi-value">{{ open_count }}</span>
+        <span class="admin-kpi-meta">Alerts still awaiting action</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Resolved Alerts</span>
+        <span class="admin-kpi-value">{{ resolved_count }}</span>
+        <span class="admin-kpi-meta">Alerts already reviewed and closed</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Visible Queue</span>
+        <span class="admin-kpi-value">{{ alerts|length }}</span>
+        <span class="admin-kpi-meta">Alerts shown for the current filter</span>
+    </article>
+</section>
+
+<section class="admin-panel">
+    <div class="admin-panel-header">
+        <div>
+            <h2 class="admin-panel-title">Filter alerts</h2>
+            <p class="admin-panel-subtitle">Switch between open and resolved monitoring queues without leaving the page.</p>
+        </div>
+    </div>
+    <form method="get" class="admin-filter-bar">
+        <div class="admin-filter-grid">
+            <div class="admin-field">
+                <label for="fraud-state">State</label>
+                <select id="fraud-state" name="state">
+                    <option value="">All alerts</option>
+                    <option value="open" {% if selected_state == 'open' %}selected{% endif %}>Open</option>
+                    <option value="resolved" {% if selected_state == 'resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin-actions">
+            <button type="submit" class="btn btn-primary">Apply filter</button>
+            <a href="{% url 'admin_panel:fraud-monitoring' %}" class="btn btn-outline-dark">Reset</a>
+        </div>
+    </form>
+</section>
+
+<section class="row g-4">
+    {% for alert in alerts %}
+        <div class="col-xl-6">
+            <div class="admin-panel h-100">
+                <div class="admin-panel-header">
+                    <div>
+                        <h2 class="admin-panel-title">{{ alert.display_alert_type }}</h2>
+                        <p class="admin-panel-subtitle">Detected {{ alert.detected_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                    <span class="admin-chip {% if alert.resolved or alert.severity == 'LOW' %}admin-chip-success{% elif alert.severity == 'MEDIUM' %}admin-chip-warning{% else %}admin-chip-danger{% endif %}">
+                        {% if alert.resolved %}Resolved{% else %}{{ alert.get_severity_display }}{% endif %}
+                    </span>
+                </div>
+                <p class="admin-muted mb-3">{{ alert.description }}</p>
+                <div class="admin-list mb-3">
+                    <div class="admin-list-item d-flex justify-content-between align-items-center gap-3 py-3">
+                        <span class="fw-bold">Applicant</span>
+                        <span class="admin-muted small">{{ alert.user.get_full_name|default:alert.user.username }}</span>
+                    </div>
+                    {% if alert.application %}
+                        <div class="admin-list-item d-flex justify-content-between align-items-center gap-3 py-3">
+                            <span class="fw-bold">Application</span>
+                            <span class="admin-muted small">#{{ alert.application.id }}</span>
+                        </div>
+                    {% endif %}
+                    {% if alert.recommended_action %}
+                        <div class="admin-list-item">
+                            <div class="fw-bold">Recommended next step</div>
+                            <div class="admin-muted small mt-1">{{ alert.recommended_action }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if not alert.resolved %}
+                    <form method="post" class="admin-actions">
+                        {% csrf_token %}
+                        <input type="hidden" name="alert_id" value="{{ alert.id }}">
+                        <button class="btn btn-outline-danger" type="submit">Mark as resolved</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="admin-empty">No fraud alerts are available for the selected state.</div>
+        </div>
+    {% endfor %}
+</section>
+{% endblock %}

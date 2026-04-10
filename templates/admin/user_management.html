@@ -1,0 +1,129 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}User Management | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">User Management</h1>
+        <p class="admin-page-subtitle">Manage applicants, bank officers, and administrators from one compact access-control workspace.</p>
+    </div>
+</section>
+
+<section class="admin-kpi-grid">
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Applicants</span>
+        <span class="admin-kpi-value">{{ applicants_count }}</span>
+        <span class="admin-kpi-meta">Registered customer accounts</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Bank Officers</span>
+        <span class="admin-kpi-value">{{ officers_count }}</span>
+        <span class="admin-kpi-meta">Operational reviewers with lending access</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Administrators</span>
+        <span class="admin-kpi-value">{{ admins_count }}</span>
+        <span class="admin-kpi-meta">Accounts with platform governance access</span>
+    </article>
+</section>
+
+<section class="admin-panel">
+    <div class="admin-panel-header">
+        <div>
+            <h2 class="admin-panel-title">Filter directory</h2>
+            <p class="admin-panel-subtitle">Search by name or email, then narrow the directory to a single role.</p>
+        </div>
+    </div>
+    <form method="get" class="admin-filter-bar">
+        <div class="admin-filter-grid">
+            <div class="admin-field">
+                <label for="user-search">Search</label>
+                <input id="user-search" type="text" name="q" value="{{ search_query }}" placeholder="Name, email, or username">
+            </div>
+            <div class="admin-field">
+                <label for="user-role">Role</label>
+                <select id="user-role" name="role">
+                    <option value="">All roles</option>
+                    <option value="USER" {% if selected_role == 'USER' %}selected{% endif %}>Applicant</option>
+                    <option value="BANK_OFFICER" {% if selected_role == 'BANK_OFFICER' %}selected{% endif %}>Bank officer</option>
+                    <option value="ADMIN" {% if selected_role == 'ADMIN' %}selected{% endif %}>Administrator</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin-actions">
+            <button type="submit" class="btn btn-primary">Apply filters</button>
+            <a href="{% url 'admin_panel:user-management' %}" class="btn btn-outline-dark">Reset</a>
+        </div>
+    </form>
+</section>
+
+<section class="admin-panel">
+    <div class="admin-panel-header">
+        <div>
+            <h2 class="admin-panel-title">Account directory</h2>
+            <p class="admin-panel-subtitle">Adjust role assignment and active access without leaving the directory view.</p>
+        </div>
+    </div>
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>User identity</th>
+                    <th>Role</th>
+                    <th>Registered</th>
+                    <th>Access actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in users %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="admin-avatar" style="width: 40px; height: 40px; border-radius: 12px;">
+                                    {{ member.get_full_name|default:member.username|make_list|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ member.get_full_name|default:member.username }}</div>
+                                    <div class="admin-muted small mt-1">{{ member.email|default:"No email linked" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="admin-chip {% if member.role == 'ADMIN' %}admin-chip-warning{% elif member.role == 'BANK_OFFICER' %}admin-chip-success{% else %}admin-chip-neutral{% endif %}">
+                                {{ member.get_role_display }}
+                            </span>
+                            <div class="admin-muted small mt-1">{% if member.is_active %}Active account{% else %}Inactive account{% endif %}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ member.date_joined|date:"M d, Y" }}</div>
+                            <div class="admin-muted small mt-1">{{ member.date_joined|date:"H:i" }}</div>
+                        </td>
+                        <td>
+                            <form method="post" class="d-flex flex-wrap align-items-center justify-content-start gap-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ member.id }}">
+                                <select name="role" class="form-select form-select-sm" style="width: auto; min-width: 135px;">
+                                    <option value="USER" {% if member.role == 'USER' %}selected{% endif %}>Applicant</option>
+                                    <option value="BANK_OFFICER" {% if member.role == 'BANK_OFFICER' %}selected{% endif %}>Officer</option>
+                                    <option value="ADMIN" {% if member.role == 'ADMIN' %}selected{% endif %}>Admin</option>
+                                </select>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" name="is_active" {% if member.is_active %}checked{% endif %}>
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-outline-dark">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">
+                            <div class="admin-empty">No accounts match the current directory filters.</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

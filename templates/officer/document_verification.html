@@ -1,0 +1,112 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Document Verification | CreditSense AI{% endblock %}
+{% block page_title %}Document Verification Queue{% endblock %}
+
+{% block officer_content %}
+<div class="row g-4">
+    {% for application in applications %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 transition-all hover-lift">
+            <div class="card-header bg-white border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle me-3" style="width: 45px; height: 45px;">
+                            {{ application.user.username|first|upper }}
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-1 text-dark">{{ application.user.get_full_name|default:application.user.username }}</h5>
+                            <p class="text-muted small mb-0">Application ID: #{{ application.id }} | {{ application.loan_intent }}</p>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="small fw-bold text-muted text-uppercase mb-1">Status</div>
+                        <span class="badge {% if application.user.financial_profile.income_proof_status == 'VERIFIED' %}bg-success{% elif application.user.financial_profile.income_proof_status == 'REJECTED' %}bg-danger{% else %}bg-warning{% endif %} bg-opacity-10 text-{% if application.user.financial_profile.income_proof_status == 'VERIFIED' %}success{% elif application.user.financial_profile.income_proof_status == 'REJECTED' %}danger{% else %}warning{% endif %} px-3 py-2 rounded-pill fw-bold border">
+                            {{ application.user.financial_profile.get_income_proof_status_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-4 pt-0">
+                <div class="row g-4 mb-4">
+                    <!-- Salary Slip -->
+                    <div class="col-md-4">
+                        <div class="p-4 border rounded-4 bg-light h-100">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="stat-icon bg-primary bg-opacity-10 text-primary mb-0" style="width: 40px; height: 40px; font-size: 1.1rem; border-radius: 10px;">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0">Salary Slip</h6>
+                            </div>
+                            <p class="text-muted small mb-3 text-truncate">{{ application.user.financial_profile.income_proof_filename|default:"salary_slip_verified.pdf" }}</p>
+                            <a href="{{ application.user.financial_profile.salary_slip.url }}" target="_blank" class="btn btn-white border w-100 rounded-pill btn-sm fw-bold">View Document</a>
+                        </div>
+                    </div>
+                    <!-- Bank Statement -->
+                    <div class="col-md-4">
+                        <div class="p-4 border rounded-4 bg-light h-100 opacity-75">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="stat-icon bg-secondary bg-opacity-10 text-secondary mb-0" style="width: 40px; height: 40px; font-size: 1.1rem; border-radius: 10px;">
+                                    <i class="bi bi-bank"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0">Bank Statement</h6>
+                            </div>
+                            <p class="text-muted small mb-3">6_months_statement.pdf</p>
+                            <button class="btn btn-white border w-100 rounded-pill btn-sm fw-bold" disabled>System Verified</button>
+                        </div>
+                    </div>
+                    <!-- ID Proof -->
+                    <div class="col-md-4">
+                        <div class="p-4 border rounded-4 bg-light h-100 opacity-75">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="stat-icon bg-secondary bg-opacity-10 text-secondary mb-0" style="width: 40px; height: 40px; font-size: 1.1rem; border-radius: 10px;">
+                                    <i class="bi bi-person-badge"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0">ID Proof</h6>
+                            </div>
+                            <p class="text-muted small mb-3">aadhaar_pan_bundled.jpg</p>
+                            <button class="btn btn-white border w-100 rounded-pill btn-sm fw-bold" disabled>AI OCR Match</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <div class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Officer verification confirms data accuracy but does not override AI decisions.
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form method="post" action="{% url 'bank_officer:application-detail' application.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="income_proof_status" value="VERIFIED">
+                            <button type="submit" class="btn btn-success rounded-pill px-4 btn-sm fw-bold shadow-sm">Mark as Verified</button>
+                        </form>
+                        <form method="post" action="{% url 'bank_officer:application-detail' application.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="income_proof_status" value="REJECTED">
+                            <button type="submit" class="btn btn-danger rounded-pill px-4 btn-sm fw-bold shadow-sm">Flag as Suspicious</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm">
+        <i class="bi bi-patch-check display-1 text-muted opacity-25"></i>
+        <p class="text-muted mt-3 fs-5">No documents pending verification currently.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
+}
+.btn-white {
+    background: white;
+}
+</style>
+{% endblock %}

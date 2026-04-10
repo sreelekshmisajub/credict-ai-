@@ -1,0 +1,112 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Risk Rules Configuration | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Risk Configuration</h1>
+        <p class="admin-page-subtitle">Manage approval thresholds and the automatic decision engine without changing the underlying model pipeline.</p>
+    </div>
+</section>
+
+<section class="admin-kpi-grid">
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Approval Threshold</span>
+        <span class="admin-kpi-value">{{ config.approval_threshold }}</span>
+        <span class="admin-kpi-meta">Applications below this risk are auto-approved</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Rejection Threshold</span>
+        <span class="admin-kpi-value">{{ config.rejection_threshold }}</span>
+        <span class="admin-kpi-meta">Applications above this risk are auto-rejected</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Automation</span>
+        <span class="admin-kpi-value">{% if config.auto_decision_enabled %}On{% else %}Off{% endif %}</span>
+        <span class="admin-kpi-meta">Global auto-decision state</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Training Default Rate</span>
+        <span class="admin-kpi-value">{{ analytics.default_rate_percent }}%</span>
+        <span class="admin-kpi-meta">Reference rate from the training dataset profile</span>
+    </article>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-8">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Threshold logic parameters</h2>
+                    <p class="admin-panel-subtitle">Tune the manual-review corridor between automated approval and automated rejection.</p>
+                </div>
+            </div>
+            <form method="post" class="admin-filter-bar">
+                {% csrf_token %}
+                <div class="admin-list-item d-flex justify-content-between align-items-center gap-3">
+                    <div>
+                        <div class="fw-bold">Global AI auto-decision engine</div>
+                        <div class="admin-muted small mt-1">Enable or disable automatic approval and rejection routing.</div>
+                    </div>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" name="auto_decision" id="id_auto_decision" {% if config.auto_decision_enabled %}checked{% endif %}>
+                    </div>
+                </div>
+                <div class="admin-filter-grid">
+                    <div class="admin-field">
+                        <label for="approval-threshold">Approval threshold</label>
+                        <input id="approval-threshold" type="number" step="0.01" name="approval_threshold" value="{{ config.approval_threshold }}" min="0.1" max="0.5">
+                    </div>
+                    <div class="admin-field">
+                        <label for="rejection-threshold">Rejection threshold</label>
+                        <input id="rejection-threshold" type="number" step="0.01" name="rejection_threshold" value="{{ config.rejection_threshold }}" min="0.5" max="0.9">
+                    </div>
+                </div>
+                <div class="admin-note">
+                    Applications with risk probability between <strong>{{ config.approval_threshold }}</strong> and <strong>{{ config.rejection_threshold }}</strong> remain in the manual review band for bank officers.
+                </div>
+                <div class="admin-actions">
+                    <button type="submit" class="btn btn-primary">Apply rule logic</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Current operating profile</h2>
+                    <p class="admin-panel-subtitle">Reference values pulled from model analytics and the current configuration.</p>
+                </div>
+            </div>
+            <div class="admin-list">
+                <div class="admin-list-item d-flex justify-content-between align-items-center gap-3 py-3">
+                    <span class="fw-bold">Model</span>
+                    <span class="admin-muted small">{{ analytics.model_name|default:"Not available" }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center gap-3 py-3">
+                    <span class="fw-bold">Accuracy</span>
+                    <span class="admin-muted small">{{ analytics.model_accuracy_percent|floatformat:1 }}%</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center gap-3 py-3">
+                    <span class="fw-bold">Dataset rows</span>
+                    <span class="admin-muted small">{{ analytics.dataset_rows }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center gap-3 py-3">
+                    <span class="fw-bold">Median income</span>
+                    <span class="admin-muted small">{{ analytics.median_income }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center gap-3 py-3">
+                    <span class="fw-bold">Last updated</span>
+                    <span class="admin-muted small">{{ config.updated_at|date:"M d, Y H:i" }}</span>
+                </div>
+                <div class="admin-list-item">
+                    <div class="fw-bold">Updated by</div>
+                    <div class="admin-muted small mt-1">{% if config.updated_by %}{{ config.updated_by.get_full_name|default:config.updated_by.username }}{% else %}System default{% endif %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

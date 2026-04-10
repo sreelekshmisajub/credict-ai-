@@ -1,0 +1,129 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}System Settings | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">System Settings</h1>
+        <p class="admin-page-subtitle">Read-only platform configuration summary for the current model metadata, risk thresholds, and monitoring features available in this deployment.</p>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-8">
+        <div class="admin-panel mb-4">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Model and scoring configuration</h2>
+                    <p class="admin-panel-subtitle">Current runtime metadata and central approval thresholds.</p>
+                </div>
+            </div>
+            <div class="admin-list">
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Model name</span>
+                    <span class="admin-muted small">{{ analytics.model_name|default:"Not available" }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Model version</span>
+                    <span class="admin-muted small">{{ analytics.model_version|default:"--" }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Accuracy</span>
+                    <span class="admin-muted small">{{ analytics.model_accuracy_percent|floatformat:1 }}%</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Approval threshold</span>
+                    <span class="admin-muted small">{{ risk_config.approval_threshold }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Rejection threshold</span>
+                    <span class="admin-muted small">{{ risk_config.rejection_threshold }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Auto decision engine</span>
+                    <span class="admin-chip {% if risk_config.auto_decision_enabled %}admin-chip-success{% else %}admin-chip-warning{% endif %}">
+                        {% if risk_config.auto_decision_enabled %}Enabled{% else %}Manual Review Focused{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Monitoring coverage</h2>
+                    <p class="admin-panel-subtitle">Platform features currently supported by the project codebase and stored analytics.</p>
+                </div>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="admin-list-item h-100">
+                        <div class="fw-bold mb-2">Explainability</div>
+                        <div class="admin-muted small">SHAP previews and LIME explanation records are stored and available in model-monitoring views.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="admin-list-item h-100">
+                        <div class="fw-bold mb-2">Fraud monitoring</div>
+                        <div class="admin-muted small">{{ analytics.open_fraud_alerts }} open alert records are currently available for review.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="admin-list-item h-100">
+                        <div class="fw-bold mb-2">Application analytics</div>
+                        <div class="admin-muted small">{{ analytics.applications }} applications and {{ analytics.predictions }} predictions are currently stored.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="admin-list-item h-100">
+                        <div class="fw-bold mb-2">Model snapshot</div>
+                        <div class="admin-muted small">
+                            {% if snapshot %}
+                                Latest snapshot includes precision {{ snapshot.precision|floatformat:4 }}, recall {{ snapshot.recall|floatformat:4 }}, and F1 {{ snapshot.f1_score|floatformat:4 }}.
+                            {% else %}
+                                No synchronized model snapshot is available yet.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-note mt-3">This page summarizes the current system configuration. It does not apply runtime changes directly.</div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Dataset profile</h2>
+                    <p class="admin-panel-subtitle">Reference values from the current training metadata.</p>
+                </div>
+            </div>
+            <div class="admin-list">
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Training rows</span>
+                    <span class="admin-muted small">{{ analytics.dataset_rows }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Default rate</span>
+                    <span class="admin-muted small">{{ analytics.default_rate_percent|floatformat:1 }}%</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Median income</span>
+                    <span class="admin-muted small">{{ analytics.median_income|floatformat:0 }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Median credit history</span>
+                    <span class="admin-muted small">{{ analytics.median_credit_history|floatformat:1 }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">95th percentile loan ratio</span>
+                    <span class="admin-muted small">{{ analytics.loan_percent_income_q95|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

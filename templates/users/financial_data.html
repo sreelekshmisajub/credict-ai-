@@ -1,0 +1,311 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% load display_formatters %}
+
+{% block title %}Apply for Loan | CreditSense AI{% endblock %}
+
+{% block dashboard_css %}
+<style>
+    .financial-data-layout {
+        align-items: flex-start;
+    }
+
+    .financial-form-column,
+    .financial-notes-column,
+    .form-field-shell {
+        min-width: 0;
+    }
+
+    .smart-form-section {
+        background: #fff;
+        border: 1px solid #eef2f6;
+        border-radius: 20px;
+        padding: 32px;
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+    .submission-panel {
+        position: sticky;
+        top: 100px;
+        background: #fff;
+        border: 1px solid #eef2f6;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 4px 20px -2px rgba(0,0,0,0.03);
+        overflow: hidden;
+    }
+    .form-group-label {
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    .form-control, .form-select {
+        border-radius: 12px;
+        padding: 12px 16px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        transition: all 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        background: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .form-field-shell .form-control,
+    .form-field-shell .form-select,
+    .income-proof-widget input[type="file"] {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .income-proof-widget {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .current-document-card {
+        display: grid;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .current-document-meta {
+        min-width: 0;
+    }
+
+    .current-document-label {
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    .current-document-link {
+        display: block;
+        max-width: 100%;
+        color: var(--accent);
+        font-weight: 700;
+        text-decoration: none;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .current-document-link:hover {
+        text-decoration: underline;
+    }
+
+    .current-document-clear {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: #334155;
+    }
+
+    .current-document-clear input[type="checkbox"] {
+        margin: 0;
+    }
+
+    .document-upload-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .submission-panel .fw-bold,
+    .submission-panel .small,
+    .smart-form-section .small {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    @media (max-width: 1399.98px) {
+        .submission-panel {
+            position: static;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .smart-form-section,
+        .submission-panel {
+            padding: 22px 18px;
+            border-radius: 18px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block user_content %}
+<div class="row g-4 financial-data-layout">
+    <div class="col-xl-8 financial-form-column">
+        <form method="post" enctype="multipart/form-data" novalidate id="loan-application-form">
+            {% csrf_token %}
+
+            <div class="smart-form-section">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <span class="p-2 rounded-3 bg-primary text-white small fw-bold">01</span>
+                    <h5 class="fw-bold mb-0">Financial Profile & Income</h5>
+                </div>
+
+                <div class="row g-3">
+                    {% for field in financial_form %}
+                        <div class="col-md-6 form-field-shell">
+                            <label class="form-group-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.name == "salary_slip" %}
+                                <div class="p-2 border border-primary border-opacity-10 bg-primary bg-opacity-10 rounded-4 mt-2 small text-primary d-flex align-items-center gap-2">
+                                    <i class="bi bi-robot fs-5"></i>
+                                    <span>AI Check: Filename must contain your Full Name or PAN.</span>
+                                </div>
+                            {% endif %}
+                            {% if field.help_text %}<div class="small text-secondary mt-1 opacity-75">{{ field.help_text }}</div>{% endif %}
+                            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="smart-form-section">
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <span class="p-2 rounded-3 bg-primary text-white small fw-bold">02</span>
+                    <h5 class="fw-bold mb-0">Loan Request Details</h5>
+                </div>
+
+                <div class="row g-3">
+                    {% for field in application_form %}
+                        <div class="col-md-6 form-field-shell">
+                            <label class="form-group-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<div class="small text-secondary mt-1 opacity-75">{{ field.help_text }}</div>{% endif %}
+                            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mt-4 px-2">
+                <button type="submit" class="btn btn-primary rounded-pill px-5 py-3 fw-bold w-100 shadow-sm">
+                    <i class="bi bi-shield-check me-2"></i> Submit for AI Analysis
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-xl-4 d-none d-xl-block financial-notes-column">
+        <div class="submission-panel">
+            <h6 class="text-center fw-bold text-secondary text-uppercase small mb-4">Submission Notes</h6>
+
+            <div class="vstack gap-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-secondary">Income proof status</span>
+                    <span class="fw-bold">{{ document_status.status }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-secondary">Annual income ratio</span>
+                    <span class="fw-bold" id="ratio-preview">--</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-secondary">Latest result</span>
+                    <span class="fw-bold">
+                        {% if latest_prediction %}
+                            {{ latest_prediction.risk_category }}
+                        {% else %}
+                            No prediction yet
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <hr class="opacity-10 my-4">
+
+            <div class="small text-secondary">
+                The annual income ratio field is calculated automatically from the selected loan purpose, interest rate, and home ownership data. The final prediction is generated only after form submission.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (() => {
+        const intentInput = document.querySelector('[name="loan-loan_intent"]');
+        const rateInput = document.querySelector('[name="loan-loan_int_rate"]');
+        const ratioInput = document.querySelector('[name="loan-loan_percent_income"]');
+        const homeInput = document.querySelector('[name="profile-person_home_ownership"]');
+        const ratioPreview = document.getElementById('ratio-preview');
+
+        if (!intentInput || !rateInput || !ratioInput || !homeInput) {
+            return;
+        }
+
+        const gradeBands = JSON.parse(ratioInput.dataset.gradeBands || '[]');
+        const overallRatio = parseFloat(ratioInput.dataset.ratioOverall || '0');
+        const byIntent = JSON.parse(ratioInput.dataset.ratioByIntent || '{}');
+        const byIntentGrade = JSON.parse(ratioInput.dataset.ratioByIntentGrade || '{}');
+        const byIntentHome = JSON.parse(ratioInput.dataset.ratioByIntentHome || '{}');
+
+        const deriveGrade = (rate) => {
+            for (const [upperBound, grade] of gradeBands) {
+                if (rate <= parseFloat(upperBound)) {
+                    return grade;
+                }
+            }
+            return 'G';
+        };
+
+        const updateRatio = () => {
+            const intent = intentInput.value;
+            const rate = parseFloat(rateInput.value);
+            const homeOwnership = homeInput.value;
+
+            if (!intent || Number.isNaN(rate)) {
+                ratioInput.value = '';
+                if (ratioPreview) {
+                    ratioPreview.innerText = '--';
+                }
+                return;
+            }
+
+            const grade = deriveGrade(rate);
+            const intentRatio = parseFloat(byIntent[intent] ?? overallRatio);
+            const gradeRatio = parseFloat(byIntentGrade[intent]?.[grade] ?? intentRatio);
+            const homeRatio = parseFloat(byIntentHome[intent]?.[homeOwnership] ?? intentRatio);
+
+            let ratio = gradeRatio;
+            if (!Number.isNaN(intentRatio) && !Number.isNaN(homeRatio)) {
+                ratio += homeRatio - intentRatio;
+            }
+
+            ratio = Math.min(1, Math.max(0.01, ratio));
+            ratioInput.value = ratio.toFixed(2);
+            if (ratioPreview) {
+                ratioPreview.innerText = `${(ratio * 100).toFixed(0)}%`;
+            }
+        };
+
+        [intentInput, rateInput, homeInput].forEach((input) => {
+            input.addEventListener('input', updateRatio);
+            input.addEventListener('change', updateRatio);
+        });
+
+        updateRatio();
+    })();
+</script>
+{% endblock %}

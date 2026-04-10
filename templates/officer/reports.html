@@ -1,0 +1,143 @@
+{% extends 'officer/base.html' %}
+
+{% block title %}Officer Reports | CreditSense AI{% endblock %}
+
+{% block officer_content %}
+<div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-5">
+    <div>
+        <h1 class="display-6 fw-bold text-dark mb-2">Reports and Analytics</h1>
+        <p class="text-secondary fs-6 mb-0">
+            Operational lending metrics, risk distribution, fraud volume, and model monitoring indicators for bank officers.
+        </p>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-xl-3 col-md-6">
+        <div class="bg-white p-4 rounded-4 shadow-sm border-0 h-100 position-relative overflow-hidden">
+            <div class="text-uppercase fw-bold text-muted small tracking-wide mb-2 opacity-75 position-relative z-3">Applications</div>
+            <div class="display-5 fw-bold text-dark mb-1 position-relative z-3">{{ analytics.applications }}</div>
+            <div class="position-absolute" style="bottom: 10px; right: 10px; font-size: 3rem; opacity: 0.15; user-select: none; z-index: 1;">&#128194;</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="bg-white p-4 rounded-4 shadow-sm border-0 h-100 position-relative overflow-hidden">
+            <div class="text-uppercase fw-bold text-muted small tracking-wide mb-2 opacity-75 position-relative z-3">Predictions</div>
+            <div class="display-5 fw-bold text-info mb-1 position-relative z-3">{{ analytics.predictions }}</div>
+            <div class="position-absolute" style="bottom: 10px; right: 10px; font-size: 3rem; opacity: 0.15; user-select: none; z-index: 1;">&#128200;</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="bg-white p-4 rounded-4 shadow-sm border-0 h-100 position-relative overflow-hidden">
+            <div class="text-uppercase fw-bold text-muted small tracking-wide mb-2 opacity-75 position-relative z-3">Approval Rate</div>
+            <div class="display-5 fw-bold text-success mb-1 position-relative z-3">{{ approval_rate|floatformat:0 }}%</div>
+            <div class="position-absolute" style="bottom: 10px; right: 10px; font-size: 3rem; opacity: 0.15; user-select: none; z-index: 1;">&#9989;</div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="bg-white p-4 rounded-4 shadow-sm border-0 h-100 position-relative overflow-hidden">
+            <div class="text-uppercase fw-bold text-muted small tracking-wide mb-2 opacity-75 position-relative z-3">Average Score</div>
+            <div class="display-5 fw-bold text-primary mb-1 position-relative z-3">{{ analytics.average_credit_score|floatformat:0 }}</div>
+            <div class="position-absolute" style="bottom: 10px; right: 10px; font-size: 3rem; opacity: 0.15; user-select: none; z-index: 1;">&#127919;</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-6">
+        <div class="bg-white p-4 p-lg-5 rounded-4 shadow-sm border-0 h-100">
+            <div class="mb-4 pb-2 border-bottom border-light">
+                <h2 class="h5 fw-bold text-dark mb-1">Loan Operations</h2>
+                <p class="text-secondary small mb-0">Current application flow and review backlog.</p>
+            </div>
+            <div class="bg-light rounded-4 p-3 mb-4 flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom border-light">
+                    <span class="text-secondary fw-bold small text-uppercase">Pending Reviews</span>
+                    <strong class="fs-5 text-warning">{{ review_backlog }}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom border-light">
+                    <span class="text-secondary fw-bold small text-uppercase">Verification Required</span>
+                    <strong class="fs-5 text-info">{{ verification_required_count }}</strong>
+                </div>
+                {% for label, total in analytics.application_breakdown.items %}
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom border-light last-border-none">
+                        <span class="text-secondary fw-bold small text-uppercase">{{ label }}</span>
+                        <strong class="fs-5 text-dark">{{ total }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="bg-white p-4 p-lg-5 rounded-4 shadow-sm border-0 h-100">
+            <div class="mb-4 pb-2 border-bottom border-light">
+                <h2 class="h5 fw-bold text-dark mb-1">Risk Distribution</h2>
+                <p class="text-secondary small mb-0">Portfolio split across predicted risk categories.</p>
+            </div>
+            <div class="bg-light rounded-4 p-3 flex-grow-1">
+                {% for label, total in analytics.risk_breakdown.items %}
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom border-light last-border-none">
+                        <span class="text-secondary fw-bold small text-uppercase">{{ label }}</span>
+                        <strong class="fs-5 text-dark">{{ total }}</strong>
+                    </div>
+                {% empty %}
+                    <p class="text-secondary text-center small mb-0 py-3">No risk data is available yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-xl-6">
+        <div class="bg-white p-4 p-lg-5 rounded-4 shadow-sm border-0 h-100">
+            <div class="mb-4 pb-2 border-bottom border-light">
+                <h2 class="h5 fw-bold text-dark mb-1">Fraud Alert Severity</h2>
+                <p class="text-secondary small mb-0">Breakdown of alerts generated by the fraud module.</p>
+            </div>
+            <div class="bg-light rounded-4 p-3 flex-grow-1">
+                {% for label, total in fraud_breakdown.items %}
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom border-light last-border-none">
+                        <span class="text-secondary fw-bold small text-uppercase">{{ label }}</span>
+                        <strong class="fs-5 text-dark">{{ total }}</strong>
+                    </div>
+                {% empty %}
+                    <p class="text-secondary text-center small mb-0 py-3">No fraud alerts are currently stored.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="bg-white p-4 p-lg-5 rounded-4 shadow-sm border-0 h-100">
+            <div class="mb-4 pb-2 border-bottom border-light">
+                <h2 class="h5 fw-bold text-dark mb-1">Model Monitoring</h2>
+                <p class="text-secondary small mb-0">Runtime model metadata drawn from the real training artifacts.</p>
+            </div>
+            <div class="bg-light rounded-4 p-3 flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center py-2 px-1 border-bottom border-light">
+                    <span class="text-secondary fw-bold small text-uppercase">Model</span>
+                    <strong class="text-dark small badge bg-dark text-white px-2 py-1 rounded">{{ analytics.model_name }} {{ analytics.model_version }}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 px-1 border-bottom border-light">
+                    <span class="text-secondary fw-bold small text-uppercase">Random Forest Accuracy</span>
+                    <strong class="text-success small fw-bold">{{ analytics.model_accuracy_percent|floatformat:1 }}%</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 px-1 border-bottom border-light">
+                    <span class="text-secondary fw-bold small text-uppercase">Baseline Logistic Accuracy</span>
+                    <strong class="text-dark small">{{ analytics.baseline_accuracy_percent|floatformat:1 }}%</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 px-1 last-border-none">
+                    <span class="text-secondary fw-bold small text-uppercase">Training Dataset Rows</span>
+                    <strong class="text-dark small">{{ analytics.dataset_rows }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.last-border-none:last-child {
+    border-bottom: none !important;
+}
+</style>
+{% endblock %}

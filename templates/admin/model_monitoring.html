@@ -1,0 +1,154 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}Model Monitoring | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Model Monitoring</h1>
+        <p class="admin-page-subtitle">Review stored model metadata, feature-importance previews, and recent prediction records without presenting simulated model-switching controls.</p>
+    </div>
+</section>
+
+<section class="admin-kpi-grid">
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Model</span>
+        <span class="admin-kpi-value">{{ analytics.model_name|default:"Not available" }}</span>
+        <span class="admin-kpi-meta">Version {{ analytics.model_version|default:"--" }}</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Accuracy</span>
+        <span class="admin-kpi-value">{{ analytics.model_accuracy_percent|floatformat:1 }}%</span>
+        <span class="admin-kpi-meta">Random forest monitoring metric</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Precision</span>
+        <span class="admin-kpi-value">{% if snapshot %}{{ snapshot.precision|floatformat:4 }}{% else %}--{% endif %}</span>
+        <span class="admin-kpi-meta">Weighted precision from latest snapshot</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Recall</span>
+        <span class="admin-kpi-value">{% if snapshot %}{{ snapshot.recall|floatformat:4 }}{% else %}--{% endif %}</span>
+        <span class="admin-kpi-meta">Weighted recall from latest snapshot</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">F1 Score</span>
+        <span class="admin-kpi-value">{% if snapshot %}{{ snapshot.f1_score|floatformat:4 }}{% else %}--{% endif %}</span>
+        <span class="admin-kpi-meta">Latest stored model snapshot</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Training Rows</span>
+        <span class="admin-kpi-value">{% if snapshot %}{{ snapshot.dataset_rows }}{% else %}{{ analytics.dataset_rows }}{% endif %}</span>
+        <span class="admin-kpi-meta">Rows in the current training profile</span>
+    </article>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-7">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">SHAP feature importance preview</h2>
+                    <p class="admin-panel-subtitle">Top feature-importance values stored in the current metadata snapshot.</p>
+                </div>
+            </div>
+            <div class="admin-list">
+                {% for feature in analytics.preview_features %}
+                    <div class="admin-list-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold">{{ feature.label }}</span>
+                            <span class="admin-muted small">{{ feature.value|floatformat:1 }}%</span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 8px;">
+                            <div class="progress-bar" style="width: {{ feature.width }}%; background: linear-gradient(90deg, #0f62fe, #22c55e);"></div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="admin-empty">No feature-importance metadata is available.</div>
+                {% endfor %}
+            </div>
+            <div class="admin-note mt-3">These values are derived from the stored model metadata and are intended for monitoring, not for switching models from this screen.</div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Model snapshot details</h2>
+                    <p class="admin-panel-subtitle">Current metadata summary for the active training artifacts.</p>
+                </div>
+            </div>
+            <div class="admin-list">
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Baseline accuracy</span>
+                    <span class="admin-muted small">{{ analytics.baseline_accuracy_percent|floatformat:1 }}%</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Median income</span>
+                    <span class="admin-muted small">{{ analytics.median_income|floatformat:0 }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Median credit history</span>
+                    <span class="admin-muted small">{{ analytics.median_credit_history|floatformat:1 }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Median employment length</span>
+                    <span class="admin-muted small">{{ analytics.median_employment_length|floatformat:1 }}</span>
+                </div>
+                <div class="admin-list-item d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">95th percentile interest rate</span>
+                    <span class="admin-muted small">{{ analytics.interest_rate_q95|floatformat:2 }}%</span>
+                </div>
+            </div>
+            {% if snapshot and snapshot.notes %}
+                <div class="admin-note mt-3">{{ snapshot.notes }}</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="admin-panel">
+    <div class="admin-panel-header">
+        <div>
+            <h2 class="admin-panel-title">Recent prediction diagnostics</h2>
+            <p class="admin-panel-subtitle">Recent saved prediction records with LIME explanation excerpts.</p>
+        </div>
+    </div>
+    <div class="row g-4">
+        {% for prediction in recent_predictions %}
+            <div class="col-xl-6">
+                <div class="admin-list-item h-100">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                        <div>
+                            <div class="fw-bold">{{ prediction.application.user.get_full_name|default:prediction.application.user.username }}</div>
+                            <div class="admin-muted small mt-1">Application #{{ prediction.application.id }} on {{ prediction.created_at|date:"M d, Y" }}</div>
+                        </div>
+                        <span class="admin-chip {% if prediction.risk_category == 'Low Risk' %}admin-chip-success{% elif prediction.risk_category == 'Medium Risk' %}admin-chip-warning{% else %}admin-chip-danger{% endif %}">
+                            {{ prediction.risk_category }}
+                        </span>
+                    </div>
+                    <div class="admin-muted small mb-3">Probability of default: {{ prediction.risk_probability|floatformat:2 }}</div>
+                    <div class="admin-list">
+                        {% for feature, weight in prediction.lime_explanations.items|slice:":4" %}
+                            <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light">
+                                <span class="small fw-bold">{{ feature|truncatechars:28 }}</span>
+                                <span class="small {% if weight > 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {% if weight > 0 %}+{% endif %}{{ weight|floatformat:3 }}
+                                </span>
+                            </div>
+                        {% empty %}
+                            <div class="admin-muted small">No LIME explanation values were stored for this prediction.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="admin-empty">No recent prediction records are available for model monitoring.</div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

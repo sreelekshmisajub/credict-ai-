@@ -1,0 +1,534 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Fraud Alerts | CreditSense AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fraud-page {
+        display: grid;
+        gap: 1.15rem;
+    }
+
+    .fraud-hero,
+    .fraud-filter-card,
+    .fraud-alert-card,
+    .fraud-empty-card {
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: var(--shadow);
+    }
+
+    .fraud-hero {
+        padding: 1.35rem;
+        background:
+            radial-gradient(circle at top right, rgba(239, 68, 68, 0.12), transparent 28%),
+            radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.1), transparent 24%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+    }
+
+    .fraud-hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(290px, 0.95fr);
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .fraud-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(239, 68, 68, 0.1);
+        color: #b91c1c;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .fraud-title {
+        margin: 0.85rem 0 0.45rem;
+        font-size: clamp(2rem, 3vw, 2.65rem);
+        letter-spacing: -0.05em;
+    }
+
+    .fraud-copy {
+        margin: 0;
+        max-width: 52rem;
+        color: var(--muted);
+        line-height: 1.7;
+    }
+
+    .fraud-note {
+        margin-top: 1rem;
+        padding: 0.95rem 1rem;
+        border-radius: 20px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--text);
+        line-height: 1.6;
+    }
+
+    .fraud-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .fraud-stat-card {
+        padding: 0.95rem;
+        border-radius: 22px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.86);
+    }
+
+    .fraud-stat-label {
+        display: block;
+        margin-bottom: 0.45rem;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
+    .fraud-stat-value {
+        display: block;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(1.3rem, 2vw, 1.9rem);
+        line-height: 1;
+        color: var(--text);
+        font-weight: 700;
+    }
+
+    .fraud-stat-meta {
+        display: block;
+        margin-top: 0.35rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+    }
+
+    .fraud-filter-card {
+        padding: 1.15rem;
+    }
+
+    .fraud-filter-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: start;
+        margin-bottom: 1rem;
+    }
+
+    .fraud-filter-head h5 {
+        margin: 0;
+        font-family: "Space Grotesk", sans-serif;
+    }
+
+    .fraud-filter-head p {
+        margin: 0.4rem 0 0;
+        color: var(--muted);
+    }
+
+    .fraud-filter-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.38rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.05);
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .fraud-filter-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: end;
+    }
+
+    .fraud-filter-card .form-select,
+    .fraud-filter-card .btn {
+        border-radius: 16px;
+    }
+
+    .fraud-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .fraud-alert-card {
+        padding: 1.15rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .fraud-alert-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 5px;
+        background: #e2e8f0;
+    }
+
+    .fraud-alert-card.severity-low::before {
+        background: #22c55e;
+    }
+
+    .fraud-alert-card.severity-medium::before {
+        background: #f59e0b;
+    }
+
+    .fraud-alert-card.severity-high::before {
+        background: #ef4444;
+    }
+
+    .fraud-alert-card.severity-critical::before {
+        background: #991b1b;
+    }
+
+    .fraud-alert-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: start;
+        margin-bottom: 0.9rem;
+    }
+
+    .fraud-alert-title {
+        margin: 0;
+        font-size: 1.05rem;
+        color: var(--text);
+    }
+
+    .fraud-alert-copy {
+        margin: 0 0 1rem;
+        color: var(--muted);
+        line-height: 1.65;
+    }
+
+    .fraud-chip-group {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .fraud-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.35rem 0.72rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+    }
+
+    .fraud-chip.state-open {
+        background: rgba(245, 158, 11, 0.14);
+        color: #b45309;
+    }
+
+    .fraud-chip.state-resolved {
+        background: rgba(34, 197, 94, 0.14);
+        color: #15803d;
+    }
+
+    .fraud-chip.severity-low {
+        background: rgba(34, 197, 94, 0.14);
+        color: #15803d;
+    }
+
+    .fraud-chip.severity-medium {
+        background: rgba(245, 158, 11, 0.14);
+        color: #b45309;
+    }
+
+    .fraud-chip.severity-high {
+        background: rgba(239, 68, 68, 0.14);
+        color: #b91c1c;
+    }
+
+    .fraud-chip.severity-critical {
+        background: rgba(153, 27, 27, 0.14);
+        color: #7f1d1d;
+    }
+
+    .fraud-detail-grid {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .fraud-detail-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: start;
+        padding: 0.8rem 0.9rem;
+        border-radius: 18px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        background: rgba(248, 250, 252, 0.96);
+    }
+
+    .fraud-detail-label {
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .fraud-detail-value {
+        color: var(--text);
+        font-weight: 700;
+        text-align: right;
+    }
+
+    .fraud-empty-card {
+        padding: 2.1rem 1.5rem;
+        text-align: center;
+    }
+
+    .fraud-empty-icon {
+        width: 4.5rem;
+        height: 4.5rem;
+        margin: 0 auto 1rem;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(14, 165, 233, 0.1);
+        color: #0284c7;
+        font-size: 1.7rem;
+    }
+
+    .fraud-empty-card h3 {
+        margin: 0 0 0.6rem;
+        font-family: "Space Grotesk", sans-serif;
+    }
+
+    .fraud-empty-card p {
+        max-width: 42rem;
+        margin: 0 auto;
+        color: var(--muted);
+        line-height: 1.7;
+    }
+
+    .fraud-empty-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1.15rem;
+    }
+
+    .fraud-empty-actions .btn {
+        border-radius: 16px;
+        padding-inline: 1.15rem;
+        font-weight: 700;
+    }
+
+    @media (max-width: 991px) {
+        .fraud-hero-grid,
+        .fraud-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .fraud-stat-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 767px) {
+        .fraud-hero,
+        .fraud-filter-card,
+        .fraud-alert-card,
+        .fraud-empty-card {
+            padding: 1rem;
+            border-radius: 24px;
+        }
+
+        .fraud-filter-head,
+        .fraud-alert-head,
+        .fraud-detail-row {
+            flex-direction: column;
+        }
+
+        .fraud-stat-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .fraud-chip-group {
+            justify-content: flex-start;
+        }
+
+        .fraud-detail-value {
+            text-align: left;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block user_content %}
+<div class="fraud-page">
+    <section class="fraud-hero">
+        <div class="fraud-hero-grid">
+            <div>
+                <span class="fraud-kicker"><i class="bi bi-shield-exclamation"></i> Security Monitoring</span>
+                <h1 class="fraud-title">Fraud Alerts</h1>
+                <p class="fraud-copy">
+                    Review suspicious activity warnings triggered for your applications and keep track of any items that may need manual review.
+                </p>
+                <div class="fraud-note">
+                    This page stays active even when there are no current alerts. CreditSense monitors unusual borrowing pressure,
+                    repeated application activity, and repayment-risk anomalies in the background.
+                </div>
+            </div>
+
+            <div class="fraud-stat-grid">
+                <div class="fraud-stat-card">
+                    <span class="fraud-stat-label">Open Alerts</span>
+                    <span class="fraud-stat-value">{{ open_alert_count }}</span>
+                    <span class="fraud-stat-meta">Items currently awaiting review</span>
+                </div>
+                <div class="fraud-stat-card">
+                    <span class="fraud-stat-label">Resolved Alerts</span>
+                    <span class="fraud-stat-value">{{ resolved_alert_count }}</span>
+                    <span class="fraud-stat-meta">Previously handled monitoring events</span>
+                </div>
+                <div class="fraud-stat-card">
+                    <span class="fraud-stat-label">Monitoring Status</span>
+                    <span class="fraud-stat-value">
+                        {% if open_alert_count %}
+                            Active
+                        {% elif total_alert_count %}
+                            Clear
+                        {% else %}
+                            Normal
+                        {% endif %}
+                    </span>
+                    <span class="fraud-stat-meta">
+                        {% if open_alert_count %}
+                            Security attention is currently required
+                        {% elif total_alert_count %}
+                            No open alerts at the moment
+                        {% else %}
+                            No alerts have been recorded yet
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="fraud-filter-card">
+        <div class="fraud-filter-head">
+            <div>
+                <h5>Alert Filter</h5>
+                <p>Switch between open and resolved alerts without leaving the monitoring dashboard.</p>
+            </div>
+            <span class="fraud-filter-indicator">
+                {% if selected_state == 'open' %}
+                    Showing open alerts
+                {% elif selected_state == 'resolved' %}
+                    Showing resolved alerts
+                {% else %}
+                    Showing all alerts
+                {% endif %}
+            </span>
+        </div>
+
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label" for="state-filter">Alert state</label>
+                <select class="form-select" id="state-filter" name="state">
+                    <option value="">All alerts</option>
+                    <option value="open" {% if selected_state == 'open' %}selected{% endif %}>Open</option>
+                    <option value="resolved" {% if selected_state == 'resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+            </div>
+            <div class="col-md-8 fraud-filter-actions">
+                <button class="btn btn-primary" type="submit">Apply filter</button>
+                <a class="btn btn-light border" href="{% url 'users:fraud-alerts' %}">Reset</a>
+            </div>
+        </form>
+    </section>
+
+    {% if alerts %}
+        <section class="fraud-grid">
+            {% for alert in alerts %}
+                <article class="fraud-alert-card severity-{{ alert.severity|lower }}">
+                    <div class="fraud-alert-head">
+                        <div>
+                            <h3 class="fraud-alert-title">{{ alert.display_alert_type }}</h3>
+                        </div>
+                        <div class="fraud-chip-group">
+                            <span class="fraud-chip severity-{{ alert.severity|lower }}">{{ alert.get_severity_display }}</span>
+                            <span class="fraud-chip {% if alert.resolved %}state-resolved{% else %}state-open{% endif %}">
+                                {% if alert.resolved %}Resolved{% else %}Open{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="fraud-alert-copy">{{ alert.description }}</p>
+
+                    <div class="fraud-detail-grid">
+                        {% if alert.application %}
+                            <div class="fraud-detail-row">
+                                <span class="fraud-detail-label">Application</span>
+                                <span class="fraud-detail-value">
+                                    #{{ alert.application.id }}
+                                    {% if alert.application.get_loan_intent_display %} - {{ alert.application.get_loan_intent_display }}{% else %} - {{ alert.application.loan_intent }}{% endif %}
+                                </span>
+                            </div>
+                            <div class="fraud-detail-row">
+                                <span class="fraud-detail-label">Application Status</span>
+                                <span class="fraud-detail-value">{{ alert.application.get_status_display }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="fraud-detail-row">
+                            <span class="fraud-detail-label">Recommended Action</span>
+                            <span class="fraud-detail-value">{{ alert.recommended_action|default:"Contact support for a manual review." }}</span>
+                        </div>
+                        <div class="fraud-detail-row">
+                            <span class="fraud-detail-label">Detected</span>
+                            <span class="fraud-detail-value">{{ alert.detected_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </section>
+    {% else %}
+        <section class="fraud-empty-card">
+            <div class="fraud-empty-icon">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <h3>
+                {% if total_alert_count and selected_state %}
+                    No alerts matched this filter
+                {% else %}
+                    No fraud alerts right now
+                {% endif %}
+            </h3>
+            <p>
+                {% if total_alert_count and selected_state %}
+                    There are saved fraud alerts on your account, but none match the selected filter. Reset the filter to review the full monitoring history.
+                {% else %}
+                    Your account currently has no stored fraud alerts. This page will show flagged events here whenever the system detects unusual application patterns or elevated repayment anomalies.
+                {% endif %}
+            </p>
+
+            <div class="fraud-empty-actions">
+                {% if total_alert_count and selected_state %}
+                    <a class="btn btn-primary" href="{% url 'users:fraud-alerts' %}">View all alerts</a>
+                {% else %}
+                    <a class="btn btn-primary" href="{% url 'users:financial-data' %}">Run new analysis</a>
+                {% endif %}
+                <a class="btn btn-light border" href="{% url 'users:history' %}">Review history</a>
+            </div>
+        </section>
+    {% endif %}
+</div>
+{% endblock %}

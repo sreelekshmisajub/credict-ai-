@@ -1,0 +1,111 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path("auth/register/", views.RegisterAPIView.as_view(), name="api-register"),
+    path("auth/login/", views.LoginAPIView.as_view(), name="api-login"),
+    path("auth/logout/", views.LogoutAPIView.as_view(), name="api-logout"),
+    path(
+        "user/financial-profile/",
+        views.FinancialProfileAPIView.as_view(),
+        name="api-financial-profile",
+    ),
+    path("user/predictions/", views.PredictionAPIView.as_view(), name="api-predictions"),
+    path(
+        "user/predictions/<int:prediction_id>/",
+        views.PredictionDetailAPIView.as_view(),
+        name="api-prediction-detail",
+    ),
+    path(
+        "user/predictions/<int:prediction_id>/explanations/",
+        views.ExplanationAPIView.as_view(),
+        name="api-explanations",
+    ),
+    path(
+        "user/recommendations/",
+        views.RecommendationListAPIView.as_view(),
+        name="api-recommendations",
+    ),
+    path(
+        "officer/applications/",
+        views.OfficerApplicationListAPIView.as_view(),
+        name="api-officer-applications",
+    ),
+    path(
+        "officer/applications/<int:application_id>/decision/",
+        views.OfficerDecisionAPIView.as_view(),
+        name="api-officer-decision",
+    ),
+    path(
+        "officer/fraud-alerts/",
+        views.OfficerFraudAlertListAPIView.as_view(),
+        name="api-officer-fraud-alerts",
+    ),
+    path(
+        "admin/dashboard/",
+        views.AdminDashboardAPIView.as_view(),
+        name="api-admin-dashboard",
+    ),
+    path("admin/users/", views.AdminUserListAPIView.as_view(), name="api-admin-users"),
+    path(
+        "admin/users/<int:user_id>/",
+        views.AdminUserUpdateAPIView.as_view(),
+        name="api-admin-user-update",
+    ),
+    path(
+        "admin/officers/",
+        views.AdminOfficerListCreateAPIView.as_view(),
+        name="api-admin-officers",
+    ),
+    path(
+        "admin/officers/<int:profile_id>/",
+        views.AdminOfficerDetailAPIView.as_view(),
+        name="api-admin-officer-detail",
+    ),
+    path(
+        "admin/applications/",
+        views.AdminApplicationMonitoringAPIView.as_view(),
+        name="api-admin-applications",
+    ),
+    path(
+        "admin/fraud-alerts/",
+        views.AdminFraudAlertListAPIView.as_view(),
+        name="api-admin-fraud-alerts",
+    ),
+    path(
+        "admin/fraud-alerts/<int:alert_id>/resolve/",
+        views.AdminFraudAlertResolveAPIView.as_view(),
+        name="api-admin-fraud-alert-resolve",
+    ),
+    path(
+        "admin/announcements/",
+        views.AdminAnnouncementListCreateAPIView.as_view(),
+        name="api-admin-announcements",
+    ),
+    path(
+        "admin/announcements/<int:announcement_id>/",
+        views.AdminAnnouncementDetailAPIView.as_view(),
+        name="api-admin-announcement-detail",
+    ),
+    path(
+        "admin/activity-logs/",
+        views.AdminActivityLogsAPIView.as_view(),
+        name="api-admin-activity-logs",
+    ),
+    path(
+        "admin/model-monitoring/",
+        views.AdminModelMonitoringAPIView.as_view(),
+        name="api-admin-model-monitoring",
+    ),
+    path(
+        "admin/analytics/",
+        views.AdminAnalyticsAPIView.as_view(),
+        name="api-admin-analytics",
+    ),
+    path(
+        "admin/system-analytics/",
+        views.AdminSystemAnalyticsAPIView.as_view(),
+        name="api-admin-system-analytics",
+    ),
+]

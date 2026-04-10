@@ -1,0 +1,152 @@
+{% extends 'admin/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Application Monitoring | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Loan Application Monitoring</h1>
+        <p class="admin-page-subtitle">Review the live application queue, inspect model output, and confirm whether document proof is already on file.</p>
+    </div>
+</section>
+
+<section class="admin-kpi-grid">
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Portfolio</span>
+        <span class="admin-kpi-value">{{ total_application_count }}</span>
+        <span class="admin-kpi-meta">Applications currently stored in the platform</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Auto-scored</span>
+        <span class="admin-kpi-value">{{ total_prediction_count }}</span>
+        <span class="admin-kpi-meta">Applications with a saved AI prediction</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Pending Proof Checks</span>
+        <span class="admin-kpi-value">{{ open_document_count }}</span>
+        <span class="admin-kpi-meta">Income proof files still marked pending review</span>
+    </article>
+</section>
+
+<section class="admin-panel">
+    <div class="admin-panel-header">
+        <div>
+            <h2 class="admin-panel-title">Filter portfolio</h2>
+            <p class="admin-panel-subtitle">Search by applicant or loan purpose, then narrow the queue by workflow status or model risk band.</p>
+        </div>
+    </div>
+    <form method="get" class="admin-filter-bar">
+        <div class="admin-filter-grid">
+            <div class="admin-field">
+                <label for="application-search">Search</label>
+                <input id="application-search" type="text" name="q" value="{{ search_query }}" placeholder="Applicant name, email, or intent">
+            </div>
+            <div class="admin-field">
+                <label for="application-status">Status</label>
+                <select id="application-status" name="status">
+                    <option value="">All statuses</option>
+                    {% for value, label in status_options %}
+                        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="admin-field">
+                <label for="application-risk">Risk</label>
+                <select id="application-risk" name="risk">
+                    <option value="">All risk bands</option>
+                    {% for risk in risk_options %}
+                        <option value="{{ risk }}" {% if selected_risk == risk %}selected{% endif %}>{{ risk }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="admin-actions">
+            <button type="submit" class="btn btn-primary">Apply filters</button>
+            <a href="{% url 'admin_panel:application-monitoring' %}" class="btn btn-outline-dark">Reset</a>
+        </div>
+    </form>
+</section>
+
+<section class="admin-panel">
+    <div class="admin-panel-header">
+        <div>
+            <h2 class="admin-panel-title">Application queue</h2>
+            <p class="admin-panel-subtitle">Compact underwriting view of applicant identity, request details, model output, and document readiness.</p>
+        </div>
+    </div>
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Applicant</th>
+                    <th>Request</th>
+                    <th>AI risk</th>
+                    <th>Decision</th>
+                    <th>Documents</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for application in applications %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ application.user.get_full_name|default:application.user.username }}</div>
+                            <div class="admin-muted small mt-1">{{ application.user.email|default:"No email linked" }}</div>
+                            <div class="admin-muted small mt-1">Submitted {{ application.created_at|date:"M d, Y" }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ application.loan_amnt|inr_currency }}</div>
+                            <div class="admin-muted small mt-1">{{ application.get_loan_intent_display }}</div>
+                            <div class="admin-muted small mt-1">Rate {{ application.loan_int_rate|floatformat:2 }}% • Ratio {{ application.loan_percent_income|floatformat:2 }}</div>
+                        </td>
+                        <td>
+                            {% if application.prediction %}
+                                <span class="admin-chip {% if application.prediction.risk_category == 'Low Risk' %}admin-chip-success{% elif application.prediction.risk_category == 'Medium Risk' %}admin-chip-warning{% else %}admin-chip-danger{% endif %}">
+                                    {{ application.prediction.risk_category }}
+                                </span>
+                                <div class="admin-muted small mt-1">Score {{ application.prediction.credit_score }}</div>
+                                <div class="admin-muted small mt-1">Probability {{ application.prediction.risk_probability|floatformat:2 }}</div>
+                            {% else %}
+                                <span class="admin-chip admin-chip-warning">No auto-score</span>
+                                <div class="admin-muted small mt-1">Prediction has not been generated yet.</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="admin-chip {% if application.status == 'APPROVED' %}admin-chip-success{% elif application.status == 'REJECTED' %}admin-chip-danger{% else %}admin-chip-warning{% endif %}">
+                                {{ application.get_status_display }}
+                            </span>
+                            {% if application.reviewed_by %}
+                                <div class="admin-muted small mt-1">Reviewed by {{ application.reviewed_by.get_full_name|default:application.reviewed_by.username }}</div>
+                            {% endif %}
+                            {% if application.reviewed_at %}
+                                <div class="admin-muted small mt-1">{{ application.reviewed_at|date:"M d, Y H:i" }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% with profile=application.user.financial_profile %}
+                                {% if profile.salary_slip %}
+                                    <span class="admin-chip {% if profile.income_proof_status == 'VERIFIED' %}admin-chip-success{% elif profile.income_proof_status == 'REJECTED' %}admin-chip-danger{% else %}admin-chip-warning{% endif %}">
+                                        {{ profile.get_income_proof_status_display }}
+                                    </span>
+                                    <div class="mt-2">
+                                        <a href="{{ profile.salary_slip.url }}" target="_blank" class="btn btn-sm btn-outline-dark">Open proof</a>
+                                    </div>
+                                {% else %}
+                                    <span class="admin-chip admin-chip-warning">Pending upload</span>
+                                    <div class="admin-muted small mt-1">No income proof file is attached yet.</div>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="admin-empty">No loan applications match the current monitoring filters.</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

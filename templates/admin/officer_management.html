@@ -1,0 +1,160 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}Officer Management | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Officer Management</h1>
+        <p class="admin-page-subtitle">Create new bank officer accounts and manage existing institutional profiles from one compact operations page.</p>
+    </div>
+</section>
+
+<section class="admin-kpi-grid">
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Officer Profiles</span>
+        <span class="admin-kpi-value">{{ officers_count }}</span>
+        <span class="admin-kpi-meta">Total bank officer accounts on record</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Active Officers</span>
+        <span class="admin-kpi-value">{{ active_officers }}</span>
+        <span class="admin-kpi-meta">Profiles currently enabled for access</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Inactive Officers</span>
+        <span class="admin-kpi-value">{{ inactive_officers }}</span>
+        <span class="admin-kpi-meta">Profiles currently disabled</span>
+    </article>
+</section>
+
+<section class="row g-4">
+    <div class="col-xl-5">
+        <div class="admin-panel h-100">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Create officer account</h2>
+                    <p class="admin-panel-subtitle">Provision a new officer with institution details and an initial password.</p>
+                </div>
+            </div>
+
+            <form method="post" class="admin-form-grid">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="create">
+                <div class="admin-field">
+                    <label>{{ creation_form.email.label }}</label>
+                    {{ creation_form.email }}
+                    {% for error in creation_form.email.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="admin-field">
+                    <label>{{ creation_form.first_name.label }}</label>
+                    {{ creation_form.first_name }}
+                    {% for error in creation_form.first_name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="admin-field">
+                    <label>{{ creation_form.last_name.label }}</label>
+                    {{ creation_form.last_name }}
+                    {% for error in creation_form.last_name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="admin-field">
+                    <label>{{ creation_form.organization_name.label }}</label>
+                    {{ creation_form.organization_name }}
+                    {% for error in creation_form.organization_name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="admin-field">
+                    <label>{{ creation_form.employee_id.label }}</label>
+                    {{ creation_form.employee_id }}
+                    {% for error in creation_form.employee_id.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="admin-field">
+                    <label>{{ creation_form.branch_name.label }}</label>
+                    {{ creation_form.branch_name }}
+                    {% for error in creation_form.branch_name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="admin-field">
+                    <label>{{ creation_form.password.label }}</label>
+                    {{ creation_form.password }}
+                    {% for error in creation_form.password.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="admin-field">
+                    <label>{{ creation_form.confirm_password.label }}</label>
+                    {{ creation_form.confirm_password }}
+                    {% for error in creation_form.confirm_password.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                {% for error in creation_form.non_field_errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+                <div class="admin-actions" style="grid-column: 1 / -1;">
+                    <button type="submit" class="btn btn-primary">Create officer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-xl-7">
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <div>
+                    <h2 class="admin-panel-title">Existing officers</h2>
+                    <p class="admin-panel-subtitle">Update institution details, approval limit, and access status for each officer profile.</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                {% for row in officer_rows %}
+                    <div class="col-12">
+                        <div class="admin-list-item">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <div>
+                                    <div class="fw-bold">{{ row.profile.user.get_full_name|default:row.profile.user.username }}</div>
+                                    <div class="admin-muted small mt-1">{{ row.profile.user.email }}</div>
+                                </div>
+                                <span class="admin-chip {% if row.profile.user.is_active %}admin-chip-success{% else %}admin-chip-danger{% endif %}">
+                                    {% if row.profile.user.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </div>
+
+                            <form method="post" class="admin-form-grid">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="update">
+                                <input type="hidden" name="profile_id" value="{{ row.profile.id }}">
+
+                                <div class="admin-field">
+                                    <label>{{ row.form.organization_name.label }}</label>
+                                    {{ row.form.organization_name }}
+                                </div>
+                                <div class="admin-field">
+                                    <label>{{ row.form.employee_id.label }}</label>
+                                    {{ row.form.employee_id }}
+                                </div>
+                                <div class="admin-field">
+                                    <label>{{ row.form.branch_name.label }}</label>
+                                    {{ row.form.branch_name }}
+                                </div>
+                                <div class="admin-field">
+                                    <label>{{ row.form.approval_limit.label }}</label>
+                                    {{ row.form.approval_limit }}
+                                </div>
+                                <div class="admin-field">
+                                    <label>{{ row.form.is_active.label|default:"Active" }}</label>
+                                    <div class="form-check form-switch mt-2">
+                                        {{ row.form.is_active }}
+                                    </div>
+                                </div>
+                                <div class="admin-actions" style="grid-column: 1 / -1;">
+                                    <button type="submit" class="btn btn-outline-dark">Save changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="admin-empty">No bank officer profiles are available yet.</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% load display_formatters %}
+
+{% block title %}Profile & Settings | CreditSense AI{% endblock %}
+
+{% block dashboard_css %}
+<style>
+    .profile-hero {
+        padding: 40px;
+        background: #fff;
+        border: 1px solid #eef2f6;
+        border-radius: 24px;
+        margin-bottom: 32px;
+        position: relative;
+        overflow: hidden;
+    }
+    .profile-hero::after {
+        content: '';
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        background: var(--accent-soft);
+        border-radius: 50%;
+        top: -50px;
+        right: -50px;
+        z-index: 0;
+    }
+    .settings-nav {
+        padding: 10px;
+        background: #fff;
+        border: 1px solid #eef2f6;
+        border-radius: 16px;
+        margin-bottom: 32px;
+    }
+    .settings-nav .nav-link {
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 700;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+    .settings-nav .nav-link.active {
+        background: var(--accent);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block user_content %}
+<div class="profile-hero d-flex flex-column flex-md-row align-items-center gap-5">
+    <div class="position-relative">
+        <div class="user-avatar overflow-hidden shadow-lg border border-4 border-white" style="width: 120px; height: 120px; font-size: 3rem; background: var(--accent); color: white;">
+            {% if request.user.profile_picture %}
+                <img src="{{ request.user.profile_picture.url }}" class="w-100 h-100 object-fit-cover" id="avatarPreview" alt="Profile">
+            {% else %}
+                <span id="initialsFallback">{{ request.user.get_full_name|default:request.user.username|make_list|first|upper }}</span>
+            {% endif %}
+        </div>
+        <button type="button" class="btn btn-primary rounded-circle position-absolute bottom-0 end-0 p-2 shadow" 
+                onclick="document.getElementById('id_account-profile_picture').click()" 
+                style="width: 40px; height: 40px; display: grid; place-items: center; border: 3px solid white;">
+            <i class="bi bi-camera-fill"></i>
+        </button>
+    </div>
+    
+    <div class="text-center text-md-start" style="z-index: 1;">
+        <h2 class="fw-black mb-1">{{ request.user.get_full_name|default:request.user.username }}</h2>
+        <p class="text-secondary mb-3"><i class="bi bi-envelope me-1"></i> {{ request.user.email }}</p>
+        <div class="badge {% if request.user.is_verified %}bg-success bg-opacity-10 text-success{% else %}bg-light text-secondary{% endif %} rounded-pill px-4 py-2">
+            {% if request.user.is_verified %}<i class="bi bi-patch-check-fill me-1"></i> Verified Applicant{% else %}Applicant Account On File{% endif %}
+        </div>
+    </div>
+</div>
+
+<nav class="settings-nav nav nav-pills nav-justified" id="settingsTabs">
+    <a class="nav-link active" data-bs-toggle="pill" href="#personalTab">Personal Identity</a>
+    <a class="nav-link" data-bs-toggle="pill" href="#financialTab">Financial Base</a>
+    <a class="nav-link" data-bs-toggle="pill" href="#securityTab">Security & Sync</a>
+</nav>
+
+<div class="tab-content" id="settingsTabContent">
+    <!-- Personal -->
+    <div class="tab-pane fade show active" id="personalTab">
+        <div class="saas-card">
+            <h5 class="fw-bold mb-5">Identity Records & Visualization</h5>
+            <form method="post" enctype="multipart/form-data" id="personal-form">
+                {% csrf_token %}
+                <input type="hidden" name="form_action" value="account">
+                
+                <!-- Hidden Real File Input -->
+                <div class="d-none">
+                    {{ account_form.profile_picture }}
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-group-label">Legal First Name</label>
+                        {{ account_form.first_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-group-label">Legal Last Name</label>
+                        {{ account_form.last_name }}
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-group-label">Registered Analytical Email</label>
+                        {{ account_form.email }}
+                    </div>
+                </div>
+                
+                <h6 class="fw-bold mt-5 mb-4 text-secondary text-uppercase small"><i class="bi bi-shield-lock me-2"></i>KYC Verification Records</h6>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-group-label">PAN Card Number</label>
+                        <div class="p-3 bg-light rounded-4 fw-bold">
+                            {% if request.user.pan_number %}
+                                {{ request.user.pan_number|slice:":5" }}XXXX{{ request.user.pan_number|slice:"-1:" }}
+                            {% elif applicant_profile.pan_number %}
+                                {{ applicant_profile.pan_number|slice:":5" }}XXXX{{ applicant_profile.pan_number|slice:"-1:" }}
+                            {% else %}
+                                <span class="text-secondary opacity-50">Not Available</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-group-label">Aadhaar Card Number</label>
+                        <div class="p-3 bg-light rounded-4 fw-bold">
+                            {% if applicant_profile.aadhaar_number %}
+                                XXXX-XXXX-{{ applicant_profile.aadhaar_number|slice:"-4:" }}
+                            {% else %}
+                                <span class="text-secondary opacity-50">Not Available</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 pt-4 border-top d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
+                    <div>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-sm">Sync Identity Changes</button>
+                    </div>
+                    <p class="small text-secondary mb-0 max-width-300">
+                        <i class="bi bi-info-circle me-1"></i> 
+                        Some fields may require manual verification from our audit team after submission.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Financial -->
+    <div class="tab-pane fade" id="financialTab">
+        <div class="saas-card">
+             <h5 class="fw-bold mb-4">Financial Metadata Settings</h5>
+             <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_action" value="profile">
+                <div class="row g-4">
+                    {% for field in financial_form %}
+                        <div class="col-md-6">
+                            <label class="form-group-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-4 pt-4 border-top">
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-sm">Save Financial Profile</button>
+                </div>
+             </form>
+        </div>
+    </div>
+
+    <!-- Security -->
+    <div class="tab-pane fade" id="securityTab">
+        <div class="saas-card mb-4 border-danger border-opacity-10">
+             <h5 class="fw-bold mb-4 text-danger">Security Management</h5>
+             <div class="row g-4 mb-4">
+                <div class="col-md-8">
+                     <p class="small text-secondary">Toggle Two-Factor Authentication (2FA) for sensitive risk analytics viewing.</p>
+                </div>
+                <div class="col-md-4 text-end">
+                     <div class="form-check form-switch d-inline-block">
+                         <input class="form-check-input" type="checkbox" id="2faSwitch" checked>
+                     </div>
+                </div>
+             </div>
+             
+             <div class="mt-4 pt-4 border-top">
+                <button class="btn btn-outline-danger rounded-pill px-4 btn-sm">Request Archive Export</button>
+                <button class="btn btn-danger rounded-pill px-4 btn-sm ms-2">Deactivate Lifecycle</button>
+             </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

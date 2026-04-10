@@ -1,0 +1,110 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/officer_dashboard.css' %}">
+{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block main_wrapper %}
+<div class="officer-layout">
+    <!-- Fixed Sidebar -->
+    <aside class="officer-sidebar">
+        <div class="sidebar-header">
+            <a href="{% url 'bank_officer:dashboard' %}" class="sidebar-brand">
+                Credit<span>Sense</span> AI
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="{% url 'bank_officer:dashboard' %}" class="sidebar-nav-item {% if officer_section == 'dashboard' %}is-active{% endif %}">
+                <i class="bi bi-grid-fill"></i>
+                <span>Dashboard Overview</span>
+            </a>
+            <a href="{% url 'bank_officer:applications' %}" class="sidebar-nav-item {% if officer_section == 'applications' %}is-active{% endif %}">
+                <i class="bi bi-file-earmark-text-fill"></i>
+                <span>Applications Queue</span>
+            </a>
+            <a href="{% url 'bank_officer:explanations' %}" class="sidebar-nav-item {% if officer_section == 'explanations' %}is-active{% endif %}">
+                <i class="bi bi-cpu-fill"></i>
+                <span>AI Decisions</span>
+            </a>
+            <a href="{% url 'bank_officer:risk-analysis' %}" class="sidebar-nav-item {% if officer_section == 'risk-analysis' %}is-active{% endif %}">
+                <i class="bi bi-bar-chart-fill"></i>
+                <span>Risk Analysis</span>
+            </a>
+            <a href="{% url 'bank_officer:document_verification' %}" class="sidebar-nav-item {% if officer_section == 'verification' %}is-active{% endif %}">
+                <i class="bi bi-patch-check-fill"></i>
+                <span>Document Verification</span>
+            </a>
+
+            <a href="{% url 'bank_officer:fraud-alerts' %}" class="sidebar-nav-item {% if officer_section == 'fraud-alerts' %}is-active{% endif %}">
+                <i class="bi bi-flag-fill"></i>
+                <span>Flagged Cases</span>
+            </a>
+            <a href="{% url 'bank_officer:notifications' %}" class="sidebar-nav-item {% if officer_section == 'notifications' %}is-active{% endif %}">
+                <i class="bi bi-bell-fill"></i>
+                <span>Notifications</span>
+            </a>
+            <a href="{% url 'bank_officer:profile' %}" class="sidebar-nav-item {% if officer_section == 'profile' %}is-active{% endif %}">
+                <i class="bi bi-person-fill"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="sidebar-nav-item text-danger">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <h4 class="mb-0 fw-bold">{% block page_title %}Dashboard{% endblock %}</h4>
+            </div>
+            <div class="top-bar-right">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    System Active
+                </div>
+                <a href="{% url 'bank_officer:notifications' %}" class="btn btn-link position-relative p-0 text-dark">
+                    <i class="bi bi-bell" style="font-size: 1.2rem;"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.5rem;">
+                        3+
+                    </span>
+                </a>
+                <div class="officer-profile-preview">
+                    <div class="avatar-circle">
+                        {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                    </div>
+                    <div class="officer-info">
+                        <span class="officer-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+                        <span class="officer-role">{{ user.get_role_display }}</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content-body">
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm border-0" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block officer_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}

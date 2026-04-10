@@ -1,0 +1,247 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Sign In | CreditSense AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --auth-bg: #f8fafc;
+        --card-bg: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --accent: #0066ff;
+        --accent-hover: #0052cc;
+        --border: #e2e8f0;
+        --error: #ef4444;
+    }
+
+    body {
+        background-color: var(--auth-bg);
+        color: var(--text-primary);
+        font-family: 'Inter', sans-serif;
+    }
+
+    .auth-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+
+    .auth-card {
+        width: 100%;
+        max-width: 450px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        padding: 40px;
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .auth-header h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--accent);
+        margin-bottom: 8px;
+        letter-spacing: -0.02em;
+    }
+
+    .auth-header p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        background-color: #ffffff;
+        border: 1.5px solid var(--border);
+        color: var(--text-primary);
+        border-radius: 10px;
+        height: 50px;
+        padding: 0 16px;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
+        outline: none;
+    }
+
+    .btn-auth {
+        background: var(--accent);
+        color: white;
+        height: 52px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1rem;
+        border: none;
+        width: 100%;
+        margin-top: 10px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-auth:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 102, 255, 0.2);
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 24px;
+        font-size: 0.925rem;
+        color: var(--text-secondary);
+    }
+
+    .auth-footer a {
+        color: var(--accent);
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+
+    .error-msg {
+        font-size: 0.825rem;
+        color: var(--error);
+        margin-top: 5px;
+        font-weight: 500;
+    }
+
+    .alert-auth {
+        background: rgba(0, 102, 255, 0.05);
+        border: 1px solid rgba(0, 102, 255, 0.1);
+        color: var(--accent);
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        margin-bottom: 24px;
+        font-weight: 500;
+    }
+
+    .alert-error {
+        background: rgba(239, 68, 68, 0.05);
+        border: 1px solid rgba(239, 68, 68, 0.1);
+        color: var(--error);
+    }
+
+    .position-relative {
+        position: relative;
+    }
+
+    .eye-toggle {
+        position: absolute;
+        right: 15px;
+        top: 43px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 1.2rem;
+        z-index: 10;
+    }
+
+    .eye-toggle:hover {
+        color: var(--accent);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="brand-mark">Sign In</h1>
+            <p>Access your CreditSense AI dashboard</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-auth">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" novalidate id="login-form">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label for="{{ form.email.id_for_label }}" class="form-label">Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="error-msg">{{ form.email.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4 position-relative">
+                <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                {{ form.password }}
+                <i class="bi bi-eye-slash eye-toggle" id="toggle-p"></i>
+                {% if form.password.errors %}
+                    <div class="error-msg">{{ form.password.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <div class="alert alert-error alert-auth mb-3">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <button type="submit" class="btn-auth">
+                Sign In
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            New to CreditSense AI? <a href="{% url 'register' %}">Create account</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const passInput = document.querySelector('input[type="password"]');
+    const toggleBtn = document.getElementById('toggle-p');
+
+    toggleBtn.addEventListener('click', function() {
+        if (passInput.type === 'password') {
+            passInput.type = 'text';
+            this.classList.replace('bi-eye-slash', 'bi-eye');
+        } else {
+            passInput.type = 'password';
+            this.classList.replace('bi-eye', 'bi-eye-slash');
+        }
+    });
+
+    // Handle form loading state
+    const form = document.getElementById('login-form');
+    const btn = form.querySelector('button[type="submit"]');
+    
+    form.addEventListener('submit', () => {
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Signing in...';
+        btn.disabled = true;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Loan Decision | CreditSense AI{% endblock %}
+
+{% block officer_content %}
+<div class="section-heading">
+    <div>
+        <h1 class="mb-2">Loan Decision for Application #{{ application.id }}</h1>
+        <p class="muted-text mb-0">
+            Review the prediction context and document status, then record the underwriting outcome for {{ application.user.get_full_name|default:application.user.username }}.
+        </p>
+    </div>
+    <div class="hero-badges">
+        <span class="status-pill {{ application.status|lower }}">{{ application.get_status_display }}</span>
+        {% if prediction %}
+            <span class="stat-chip">Score {{ prediction.credit_score }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-7">
+        <div class="panel-card h-100">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Officer Decision Form</h2>
+                    <p class="muted-text mb-0">Approve, reject, or request more verification with supporting notes.</p>
+                </div>
+            </div>
+            <form method="post" class="d-grid gap-4">
+                {% csrf_token %}
+                <div>
+                    <label class="form-label fw-bold text-dark mb-2" for="{{ decision_form.decision.id_for_label }}">Decision</label>
+                    {{ decision_form.decision }}
+                    {% if decision_form.decision.errors %}
+                        <div class="text-danger small mt-2">{{ decision_form.decision.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="form-label fw-bold text-dark mb-2" for="{{ decision_form.decision_notes.id_for_label }}">Decision Notes</label>
+                    {{ decision_form.decision_notes }}
+                    {% if decision_form.decision_notes.errors %}
+                        <div class="text-danger small mt-2">{{ decision_form.decision_notes.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary rounded-pill px-4 fw-bold text-white shadow-sm" style="background: linear-gradient(135deg, #0284c7, #16a34a); border: none;" type="submit">Save Decision</button>
+                    <a class="btn btn-white border shadow-sm rounded-pill px-4 fw-bold" href="{% url 'bank_officer:application-detail' application.id %}">Back to Application</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="panel-card h-100">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Application Snapshot</h2>
+                    <p class="muted-text mb-0">Key details supporting the final lending decision.</p>
+                </div>
+            </div>
+            <div class="feature-list">
+                <div class="feature-row">
+                    <span>Applicant</span>
+                    <strong>{{ application.user.get_full_name|default:application.user.username }}</strong>
+                </div>
+                <div class="feature-row">
+                    <span>Loan intent</span>
+                    <strong>{{ application.get_loan_intent_display }}</strong>
+                </div>
+                <div class="feature-row">
+                    <span>Loan amount</span>
+                    <strong>{{ application.loan_amnt|inr_currency }}</strong>
+                </div>
+                <div class="feature-row">
+                    <span>Interest rate</span>
+                    <strong>{{ application.loan_int_rate }}%</strong>
+                </div>
+                <div class="feature-row">
+                    <span>Income proof</span>
+                    <strong>{{ document_status.status }}</strong>
+                </div>
+                {% if prediction %}
+                    <div class="feature-row">
+                        <span>Risk category</span>
+                        <strong>{{ prediction.risk_category }}</strong>
+                    </div>
+                    <div class="feature-row">
+                        <span>Risk probability</span>
+                        <strong>{{ prediction.risk_probability|floatformat:2 }}</strong>
+                    </div>
+                {% endif %}
+            </div>
+            {% if document_status.document_url %}
+                <div class="auth-side-note mt-4">
+                    <strong>Income proof file:</strong>
+                    <a href="{{ document_status.document_url }}" target="_blank" rel="noopener">Open {{ document_status.document_name }}</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="panel-card">
+    <div class="section-heading mb-3">
+        <div>
+            <h2 class="h4 mb-1">Supporting Review Links</h2>
+            <p class="muted-text mb-0">Open the analysis pages again before finalizing your decision.</p>
+        </div>
+    </div>
+    <div class="officer-link-grid">
+        {% if prediction %}
+            <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:risk-analysis-detail' application.id %}">
+                <div class="feature-kicker">Risk</div>
+                <h3 class="h5">Open risk analysis</h3>
+                <p class="muted-text mb-0">Review submitted features, score, and risk probability.</p>
+            </a>
+            <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:explanation-detail' application.id %}">
+                <div class="feature-kicker">Explain</div>
+                <h3 class="h5">Open SHAP and LIME details</h3>
+                <p class="muted-text mb-0">Inspect the model explanation that supported this application.</p>
+            </a>
+        {% endif %}
+        <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:applicant-profile' application.user.id %}">
+            <div class="feature-kicker">Profile</div>
+            <h3 class="h5">Open applicant profile</h3>
+            <p class="muted-text mb-0">Check borrower history and earlier applications before saving.</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

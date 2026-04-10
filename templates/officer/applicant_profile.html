@@ -1,0 +1,117 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Applicant Profile | CreditSense AI{% endblock %}
+
+{% block officer_content %}
+<div class="section-heading">
+    <div>
+        <h1 class="mb-2">Applicant Profile</h1>
+        <p class="muted-text mb-0">
+            Financial profile, credit history, and prediction history for {{ applicant.get_full_name|default:applicant.username }}.
+        </p>
+    </div>
+    <div class="hero-badges">
+        <span class="stat-chip">Applications {{ applications|length }}</span>
+        <span class="stat-chip">Recommendations {{ recommendations|length }}</span>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-4">
+        <div class="panel-card h-100">
+            <div class="metric-label">Applicant</div>
+            <div class="h3 mb-2">{{ applicant.get_full_name|default:applicant.username }}</div>
+            <div class="muted-text mb-4">{{ applicant.email|default:applicant.username }}</div>
+            {% if applicant.financial_profile %}
+                <div class="feature-list">
+                    <div class="feature-row">
+                        <span>Income</span>
+                        <strong>{{ applicant.financial_profile.person_income|inr_currency }}</strong>
+                    </div>
+                    <div class="feature-row">
+                        <span>Credit history</span>
+                        <strong>{{ applicant.financial_profile.cb_person_cred_hist_length }} years</strong>
+                    </div>
+                    <div class="feature-row">
+                        <span>Repayment behavior</span>
+                        <strong>{{ applicant.financial_profile.repayment_behavior }}</strong>
+                    </div>
+                    <div class="feature-row">
+                        <span>Home ownership</span>
+                        <strong>{{ applicant.financial_profile.get_person_home_ownership_display }}</strong>
+                    </div>
+                    <div class="feature-row">
+                        <span>Income proof</span>
+                        <strong>{{ document_status.status }}</strong>
+                    </div>
+                </div>
+                {% if document_status.document_url %}
+                    <div class="auth-side-note mt-4">
+                        <strong>Salary slip:</strong> <a href="{{ document_status.document_url }}" target="_blank" rel="noopener">Open {{ document_status.document_name }}</a>
+                    </div>
+                {% endif %}
+            {% else %}
+                <p class="muted-text mb-0">This applicant has not completed a financial profile yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-xl-8">
+        <div class="panel-card h-100">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Prediction history</h2>
+                    <p class="muted-text mb-0">Previous applications and risk outcomes for this applicant.</p>
+                </div>
+            </div>
+            <div class="officer-activity-list">
+                {% for application in applications %}
+                    <article class="officer-activity-card">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <strong>Application #{{ application.id }}</strong>
+                                <span class="status-pill {{ application.status|lower }}">{{ application.get_status_display }}</span>
+                                {% if application.prediction %}
+                                    <span class="score-pill">{{ application.prediction.risk_category }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="muted-text mt-2">
+                                {{ application.loan_intent }} | {{ application.loan_amnt|inr_currency }} | {{ application.created_at|date:"M d, Y H:i" }}
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="{% url 'bank_officer:application-detail' application.id %}">Open</a>
+                            {% if application.prediction %}
+                                <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="{% url 'bank_officer:explanation-detail' application.id %}">Explain</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% empty %}
+                    <div class="empty-state glass-card">
+                        <p class="muted-text mb-0">No applications have been submitted by this applicant yet.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel-card">
+    <div class="section-heading mb-3">
+        <div>
+            <h2 class="h4 mb-1">Improvement recommendations</h2>
+            <p class="muted-text mb-0">Recommendations generated for the applicant from prior predictions.</p>
+        </div>
+    </div>
+    <div class="feature-list">
+        {% for recommendation in recommendations %}
+            <div class="feature-row">
+                <span>{{ recommendation.get_category_display }}</span>
+                <strong>{{ recommendation.message }}</strong>
+            </div>
+        {% empty %}
+            <p class="muted-text mb-0">No recommendations are stored for this applicant yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

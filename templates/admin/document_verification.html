@@ -1,0 +1,105 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}Document Verification | CreditSense AI{% endblock %}
+
+{% block admin_content %}
+<section class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Document Verification</h1>
+        <p class="admin-page-subtitle">Review uploaded income proof files and their stored verification statuses from applicant financial profiles.</p>
+    </div>
+</section>
+
+<section class="admin-kpi-grid">
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Verification Queue</span>
+        <span class="admin-kpi-value">{{ verification_queue_count }}</span>
+        <span class="admin-kpi-meta">Profiles with uploaded income proof</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Pending</span>
+        <span class="admin-kpi-value">{{ pending_document_count }}</span>
+        <span class="admin-kpi-meta">Awaiting document review</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Verified</span>
+        <span class="admin-kpi-value">{{ verified_document_count }}</span>
+        <span class="admin-kpi-meta">Approved income proof records</span>
+    </article>
+    <article class="admin-kpi-card">
+        <span class="admin-kpi-label">Rejected</span>
+        <span class="admin-kpi-value">{{ rejected_document_count }}</span>
+        <span class="admin-kpi-meta">Rejected income proof records</span>
+    </article>
+</section>
+
+<section class="admin-panel">
+    <div class="admin-panel-header">
+        <div>
+            <h2 class="admin-panel-title">Verification queue</h2>
+            <p class="admin-panel-subtitle">Search applicant records and review the latest uploaded file on each profile.</p>
+        </div>
+    </div>
+
+    <form method="get" class="admin-filter-bar mb-4">
+        <div class="admin-filter-grid">
+            <div class="admin-field">
+                <label for="document-search">Search applicant</label>
+                <input id="document-search" type="text" name="q" value="{{ search_query|default:'' }}" placeholder="Search by name or email">
+            </div>
+            <div class="admin-actions">
+                <button type="submit" class="btn btn-primary">Apply filter</button>
+                <a href="{% url 'admin_panel:document-verification' %}" class="btn btn-outline-dark">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="row g-4">
+        {% for profile in profiles %}
+            <div class="col-xl-6">
+                <div class="admin-list-item h-100">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                        <div>
+                            <div class="fw-bold">{{ profile.user.get_full_name|default:profile.user.username }}</div>
+                            <div class="admin-muted small mt-1">{{ profile.user.email }}</div>
+                        </div>
+                        <span class="admin-chip {% if profile.income_proof_status == 'VERIFIED' %}admin-chip-success{% elif profile.income_proof_status == 'REJECTED' %}admin-chip-danger{% else %}admin-chip-warning{% endif %}">
+                            {{ profile.get_income_proof_status_display }}
+                        </span>
+                    </div>
+
+                    <div class="admin-list">
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light">
+                            <span class="small fw-bold">Document</span>
+                            <span class="admin-muted small">{{ profile.income_proof_filename|default:"Income proof file" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light">
+                            <span class="small fw-bold">Uploaded</span>
+                            <span class="admin-muted small">{{ profile.income_proof_uploaded_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light">
+                            <span class="small fw-bold">Home ownership</span>
+                            <span class="admin-muted small">{{ profile.get_person_home_ownership_display }}</span>
+                        </div>
+                    </div>
+
+                    <div class="admin-actions mt-3">
+                        {% if profile.salary_slip %}
+                            <a href="{{ profile.salary_slip.url }}" target="_blank" class="btn btn-outline-dark btn-sm">Open file</a>
+                        {% else %}
+                            <span class="admin-muted small">Audit pending file record</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="admin-empty">No income proof files are available for the current search.</div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="admin-note mt-4">Verification status changes are not performed from this page yet. This screen is focused on queue visibility and file review.</div>
+</section>
+{% endblock %}

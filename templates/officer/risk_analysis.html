@@ -1,0 +1,103 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Risk Analysis | CreditSense AI{% endblock %}
+{% block page_title %}Detailed Risk Analysis{% endblock %}
+
+{% block officer_content %}
+<div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label fw-bold small text-muted text-uppercase">Risk Category</label>
+            <select class="form-select" name="risk">
+                <option value="">All Categories</option>
+                {% for risk in risk_options %}
+                    <option value="{{ risk }}" {% if selected_risk == risk %}selected{% endif %}>{{ risk }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100 rounded-pill fw-bold" type="submit">Filter</button>
+        </div>
+    </form>
+</div>
+
+<div class="row g-4">
+    {% for application in applications %}
+    <div class="col-xl-6">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 transition-all hover-lift">
+            <div class="card-header bg-white border-0 p-4 pb-0">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="fw-bold mb-1 text-dark">{{ application.user.get_full_name|default:application.user.username }}</h5>
+                        <p class="text-muted small mb-0">ID: #{{ application.id }} | {{ application.loan_intent }}</p>
+                    </div>
+                    <span class="badge {% if application.prediction.risk_category == 'Low Risk' %}bg-success{% elif application.prediction.risk_category == 'Medium Risk' %}bg-warning{% else %}bg-danger{% endif %} text-white rounded-pill px-3 py-2">
+                        {{ application.prediction.risk_category|upper }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-4">
+                            <div class="text-muted small fw-bold text-uppercase mb-1">DTI Ratio</div>
+                            <div class="h5 fw-bold mb-0 text-dark">{{ application.loan_percent_income|multiply:100|floatformat:1 }}%</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-4">
+                            <div class="text-muted small fw-bold text-uppercase mb-1">Income Level</div>
+                            <div class="h5 fw-bold mb-0 text-dark">{{ application.user.financial_profile.person_income|inr_currency }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-4">
+                            <div class="text-muted small fw-bold text-uppercase mb-1">EMI Burden</div>
+                            <div class="h5 fw-bold mb-0 text-dark">{{ application.loan_amnt|inr_currency }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-4">
+                            <div class="text-muted small fw-bold text-uppercase mb-1">Stability</div>
+                            <div class="h5 fw-bold mb-0 text-dark">{{ application.emp_length|default:"0"|floatformat:0 }} Yrs</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-bold text-muted text-uppercase">Risk Distribution Score</span>
+                        <span class="small fw-bold text-dark">{{ application.prediction.risk_probability|multiply:100|floatformat:0 }}/100</span>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 10px;">
+                        <div class="progress-bar {% if application.prediction.risk_probability > 0.7 %}bg-danger{% elif application.prediction.risk_probability > 0.4 %}bg-warning{% else %}bg-success{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ application.prediction.risk_probability|multiply:100 }}%"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a href="{% url 'bank_officer:risk-analysis-detail' application.id %}" class="btn btn-outline-primary w-100 rounded-pill fw-bold">Full Analysis</a>
+                    <a href="{% url 'bank_officer:application-detail' application.id %}" class="btn btn-light rounded-pill px-4 fw-bold">Review</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm">
+        <i class="bi bi-bar-chart display-1 text-muted opacity-25"></i>
+        <p class="text-muted mt-3 fs-5">No risk data matches your filter.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+}
+</style>
+{% endblock %}
+

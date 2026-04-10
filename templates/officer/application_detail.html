@@ -1,0 +1,311 @@
+{% extends 'officer/base.html' %}
+{% load display_formatters %}
+
+{% block title %}Application Detail | CreditSense AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .quick-decision-saved {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.34rem 0.74rem;
+        border-radius: 999px;
+        background: rgba(22, 163, 74, 0.12);
+        color: #15803d;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+    }
+
+    .quick-decision-alert {
+        display: flex;
+        gap: 0.7rem;
+        align-items: flex-start;
+        padding: 0.85rem 0.95rem;
+        margin-bottom: 1rem;
+        border-radius: 18px;
+        border: 1px solid rgba(22, 163, 74, 0.18);
+        background: rgba(240, 253, 244, 0.94);
+        color: #166534;
+    }
+
+    .quick-decision-alert i {
+        font-size: 1rem;
+        margin-top: 0.12rem;
+    }
+
+    .quick-decision-alert strong {
+        display: block;
+        margin-bottom: 0.12rem;
+    }
+
+    .quick-decision-alert span {
+        display: block;
+        font-size: 0.88rem;
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}
+
+{% block officer_content %}
+<div class="section-heading">
+    <div>
+        <h1 class="mb-2">Application #{{ application.id }}</h1>
+        <p class="muted-text mb-0">
+            {{ application.user.get_full_name|default:application.user.username }} | {{ application.loan_intent }} | Submitted {{ application.created_at|date:"M d, Y H:i" }}
+        </p>
+    </div>
+    <div class="hero-badges">
+        <span class="status-pill {{ application.status|lower }}">{{ application.get_status_display }}</span>
+        {% if prediction %}
+            <span class="stat-chip">{{ prediction.risk_category }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="officer-link-grid mb-4">
+    {% if prediction %}
+        <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:risk-analysis-detail' application.id %}">
+            <div class="feature-kicker">Score</div>
+            <h2 class="h5">Credit risk analysis</h2>
+            <p class="muted-text mb-0">Open the detailed score, probability, and category view for this loan request.</p>
+        </a>
+        <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:explanation-detail' application.id %}">
+            <div class="feature-kicker">XAI</div>
+            <h2 class="h5">Explainable AI insights</h2>
+            <p class="muted-text mb-0">Review SHAP and LIME feature contributions behind the model output.</p>
+        </a>
+        <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:decision' application.id %}">
+            <div class="feature-kicker">Decision</div>
+            <h2 class="h5">Loan decision workflow</h2>
+            <p class="muted-text mb-0">Approve, reject, or request additional verification from a dedicated decision screen.</p>
+        </a>
+    {% endif %}
+    <a class="feature-card text-decoration-none text-reset" href="{% url 'bank_officer:applicant-profile' application.user.id %}">
+        <div class="feature-kicker">Profile</div>
+        <h2 class="h5">Applicant profile</h2>
+        <p class="muted-text mb-0">Inspect borrower financial details, application history, and prior predictions.</p>
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="panel-card mb-4">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Loan request summary</h2>
+                    <p class="muted-text mb-0">Submitted lending request and current underwriting status.</p>
+                </div>
+            </div>
+            <div class="officer-detail-grid">
+                <div class="glass-card">
+                    <div class="metric-label">Loan amount</div>
+                    <div class="h3 mb-0">{{ application.loan_amnt|inr_currency }}</div>
+                </div>
+                <div class="glass-card">
+                    <div class="metric-label">Interest rate</div>
+                    <div class="h3 mb-0">{{ application.loan_int_rate }}%</div>
+                </div>
+                <div class="glass-card">
+                    <div class="metric-label">Debt ratio</div>
+                    <div class="h3 mb-0">{{ application.loan_percent_income }}</div>
+                </div>
+                <div class="glass-card">
+                    <div class="metric-label">Loan grade</div>
+                    <div class="h3 mb-0">{{ application.loan_grade }}</div>
+                </div>
+            </div>
+            {% if application.reviewed_by %}
+                <div class="auth-side-note mt-4">
+                    <strong>Latest review:</strong> {{ application.reviewed_by.get_full_name|default:application.reviewed_by.username }} updated this application on {{ application.reviewed_at|date:"M d, Y H:i" }}.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="panel-card">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Applicant financial details</h2>
+                    <p class="muted-text mb-0">Latest profile data supplied by the applicant.</p>
+                </div>
+            </div>
+            {% if application.user.financial_profile %}
+                <div class="officer-detail-grid">
+                    <div class="glass-card">
+                        <div class="metric-label">Income</div>
+                        <div class="h4 mb-0">{{ application.user.financial_profile.person_income|inr_currency }}</div>
+                    </div>
+                    <div class="glass-card">
+                        <div class="metric-label">Monthly income</div>
+                        <div class="h4 mb-0">{{ application.user.financial_profile.monthly_income_estimate|inr_currency }}</div>
+                    </div>
+                    <div class="glass-card">
+                        <div class="metric-label">Credit history</div>
+                        <div class="h4 mb-0">{{ application.user.financial_profile.cb_person_cred_hist_length }} years</div>
+                    </div>
+                    <div class="glass-card">
+                        <div class="metric-label">Repayment behavior</div>
+                        <div class="h4 mb-0">{{ application.user.financial_profile.repayment_behavior }}</div>
+                    </div>
+                    <div class="glass-card">
+                        <div class="metric-label">Employment length</div>
+                        <div class="h4 mb-0">{{ application.user.financial_profile.person_emp_length }} years</div>
+                    </div>
+                </div>
+                <div class="auth-side-note mt-4">
+                    <strong>Income proof:</strong> {{ document_status.status }}
+                    {% if document_status.document_url %}
+                        | <a href="{{ document_status.document_url }}" target="_blank" rel="noopener">Open {{ document_status.document_name }}</a>
+                    {% else %}
+                        | No salary slip uploaded yet
+                    {% endif %}
+                </div>
+            {% else %}
+                <p class="muted-text mb-0">The applicant has not saved a financial profile yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        {% if prediction %}
+            <div class="panel-card mb-4">
+                <div class="section-heading mb-3">
+                    <div>
+                        <h2 class="h4 mb-1">Prediction snapshot</h2>
+                        <p class="muted-text mb-0">Current AI output for this application.</p>
+                    </div>
+                </div>
+                <div class="officer-score-card mb-3">
+                    <div class="metric-label">Credit score</div>
+                    <div class="officer-score-value">{{ prediction.credit_score }}</div>
+                    <div class="{% if prediction.risk_category == 'Low Risk' %}score-low{% elif prediction.risk_category == 'Medium Risk' %}score-medium{% else %}score-high{% endif %}">
+                        {{ prediction.risk_category }}
+                    </div>
+                </div>
+                <div class="feature-list">
+                    {% for label, value in prediction.shap_explanations.items %}
+                        <div class="feature-row">
+                            <span>{{ label }}</span>
+                            <strong>{{ value }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="panel-card mb-4">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Document verification</h2>
+                    <p class="muted-text mb-0">Review the uploaded salary slip before finalizing the lending decision.</p>
+                </div>
+            </div>
+            {% if document_status.document_url and income_proof_form %}
+                <div class="feature-list mb-4">
+                    <div class="feature-row">
+                        <span>Current status</span>
+                        <strong>{{ document_status.status }}</strong>
+                    </div>
+                    <div class="feature-row">
+                        <span>Document</span>
+                        <strong>{{ document_status.document_name }}</strong>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap mb-3">
+                    <a class="btn btn-outline-light rounded-pill px-4" href="{{ document_status.document_url }}" target="_blank" rel="noopener">Open salary slip</a>
+                </div>
+                <form method="post" class="mb-0">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ income_proof_form.income_proof_status.id_for_label }}">Review status</label>
+                        {{ income_proof_form.income_proof_status }}
+                        {% for error in income_proof_form.income_proof_status.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <button class="btn btn-outline-light rounded-pill px-4" type="submit">Update document review</button>
+                </form>
+            {% else %}
+                <p class="muted-text mb-0">No salary slip is available yet for officer verification.</p>
+            {% endif %}
+        </div>
+
+        <div class="panel-card mb-4" id="quick-decision-panel">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Quick decision update</h2>
+                    <p class="muted-text mb-0">Fast underwriting action without leaving the overview.</p>
+                </div>
+                {% if request.GET.decision_saved == '1' %}
+                    <span class="quick-decision-saved"><i class="bi bi-check2-circle"></i> Saved</span>
+                {% endif %}
+            </div>
+            {% if request.GET.decision_saved == '1' %}
+                <div class="quick-decision-alert" role="status" aria-live="polite">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <div>
+                        <strong>Decision saved.</strong>
+                        <span>The underwriting update has been recorded for this application.</span>
+                    </div>
+                </div>
+            {% endif %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label" for="{{ decision_form.decision.id_for_label }}">Decision</label>
+                    {{ decision_form.decision }}
+                    {% for error in decision_form.decision.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="{{ decision_form.decision_notes.id_for_label }}">Notes</label>
+                    {{ decision_form.decision_notes }}
+                    {% for error in decision_form.decision_notes.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% for error in decision_form.non_field_errors %}
+                    <div class="text-danger small mb-3">{{ error }}</div>
+                {% endfor %}
+                <button class="btn btn-accent rounded-pill px-4" type="submit">Save decision</button>
+                <a class="btn btn-outline-light rounded-pill px-4 ms-2" href="{% url 'bank_officer:decision' application.id %}">Open full workflow</a>
+            </form>
+        </div>
+
+        <div class="panel-card">
+            <div class="section-heading mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Alerts and recommendations</h2>
+                    <p class="muted-text mb-0">Fraud warnings and improvement guidance connected to this application.</p>
+                </div>
+            </div>
+            {% if alerts %}
+                <div class="feature-list mb-4">
+                    {% for alert in alerts %}
+                        <div class="feature-row">
+                            <span>{{ alert.display_alert_type }}</span>
+                            <strong>{{ alert.get_severity_display }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="muted-text">No fraud alerts are linked to this application.</p>
+            {% endif %}
+            {% if recommendations %}
+                <div class="feature-list">
+                    {% for recommendation in recommendations %}
+                        <div class="feature-row">
+                            <span>{{ recommendation.get_category_display }}</span>
+                            <strong>{{ recommendation.message }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="muted-text mb-0">No credit improvement recommendations are available yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

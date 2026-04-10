@@ -1,0 +1,226 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% load display_formatters %}
+
+{% block title %}Risk Score & Analysis | CreditSense AI{% endblock %}
+
+{% block dashboard_css %}
+<style>
+    .risk-score-hero {
+        background: #fff;
+        border: 1px solid #eef2f6;
+        border-radius: 24px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 32px;
+    }
+    .score-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+    .factor-card {
+        padding: 20px;
+        border-radius: 16px;
+        border: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+</style>
+{% endblock %}
+
+{% block user_content %}
+{% if prediction %}
+<div class="risk-score-hero">
+    <h6 class="text-secondary fw-bold text-uppercase small mb-4">Your Credit Risk Analysis</h6>
+
+    <div style="height: 300px; position: relative;">
+        <canvas id="riskGaugeFull"></canvas>
+        <div style="position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+            <div class="display-3 fw-black mb-0 text-dark">
+                {{ prediction.risk_probability|multiply:100|floatformat:0 }}%
+            </div>
+            <div class="status-badge {% if prediction.risk_category == 'Low Risk' %}status-approved{% elif prediction.risk_category == 'Medium Risk' %}status-pending{% else %}status-rejected{% endif %} px-4 py-2 mt-2">
+                {{ prediction.risk_category }}
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center mt-5">
+        <div class="col-lg-7">
+            <p class="text-secondary mb-0">
+                The saved prediction shows a credit score of
+                <strong>{{ prediction.credit_score }}</strong>
+                and a default probability of
+                <strong>{{ prediction.risk_probability|multiply:100|floatformat:1 }}%</strong>
+                for this application, which maps to the
+                <strong>{{ prediction.risk_category }}</strong> risk band.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="score-summary-grid">
+    <div class="saas-card metric-card">
+        <h3>Credit Score</h3>
+        <div class="metric-value">{{ prediction.credit_score }}</div>
+        <div class="small text-secondary mt-2">Stored score for this prediction</div>
+    </div>
+    <div class="saas-card metric-card">
+        <h3>Requested Amount</h3>
+        <div class="metric-value">{{ application.loan_amnt|inr_currency }}</div>
+        <div class="small text-secondary mt-2">Saved loan amount</div>
+    </div>
+    <div class="saas-card metric-card">
+        <h3>Interest Rate</h3>
+        <div class="metric-value">{{ application.loan_int_rate|floatformat:2 }}%</div>
+        <div class="small text-secondary mt-2">Recorded rate for this request</div>
+    </div>
+    <div class="saas-card metric-card">
+        <h3>Income Ratio</h3>
+        <div class="metric-value">{{ application.loan_percent_income|multiply:100|floatformat:1 }}%</div>
+        <div class="small text-secondary mt-2">Loan amount as a share of annual income</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="saas-card h-100">
+            <h5 class="fw-bold mb-4">Application Snapshot</h5>
+            <div class="vstack gap-3">
+                <div class="factor-card">
+                    <i class="bi bi-briefcase text-primary fs-4"></i>
+                    <div>
+                        <div class="fw-bold small">Loan Purpose</div>
+                        <div class="text-secondary small">{{ application.get_loan_intent_display }}</div>
+                    </div>
+                </div>
+                <div class="factor-card">
+                    <i class="bi bi-file-earmark-text text-primary fs-4"></i>
+                    <div>
+                        <div class="fw-bold small">Application Status</div>
+                        <div class="text-secondary small">{{ application.get_status_display }}</div>
+                    </div>
+                </div>
+                <div class="factor-card">
+                    <i class="bi bi-calendar-event text-primary fs-4"></i>
+                    <div>
+                        <div class="fw-bold small">Prediction Date</div>
+                        <div class="text-secondary small">{{ prediction.created_at|date:"M d, Y H:i" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="saas-card h-100">
+            <h5 class="fw-bold mb-4">Recorded Model Inputs</h5>
+            {% if prediction.feature_payload %}
+                <div class="vstack gap-3">
+                    {% for label, value in prediction.feature_payload.items %}
+                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-4">
+                            <span class="small fw-bold">{{ label|replace:'_'|replace:'person:'|replace:'loan:'|title }}</span>
+                            <span class="small text-secondary">{{ value }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="p-3 bg-light rounded-4 small text-secondary">
+                    No saved feature payload is available for this prediction.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if application.reviewed_by or application.decision_notes %}
+<div class="saas-card mt-4">
+    <h5 class="fw-bold mb-3">Officer Review Update</h5>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="p-3 bg-light rounded-4">
+                <div class="small text-secondary mb-1">Reviewed by</div>
+                <div class="fw-bold">
+                    {% if application.reviewed_by %}
+                        {{ application.reviewed_by.get_full_name|default:application.reviewed_by.username }}
+                    {% else %}
+                        Not assigned
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3 bg-light rounded-4">
+                <div class="small text-secondary mb-1">Review time</div>
+                <div class="fw-bold">
+                    {% if application.reviewed_at %}
+                        {{ application.reviewed_at|date:"M d, Y H:i" }}
+                    {% else %}
+                        Pending
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3 bg-light rounded-4">
+                <div class="small text-secondary mb-1">Current decision</div>
+                <div class="fw-bold">{{ application.get_status_display }}</div>
+            </div>
+        </div>
+    </div>
+
+    {% if application.decision_notes %}
+        <div class="p-3 bg-light rounded-4 mt-3">
+            <div class="small text-secondary mb-1">Review notes</div>
+            <div class="fw-bold">{{ application.decision_notes }}</div>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{{ prediction.risk_probability|json_script:"risk-prob-data" }}
+{% else %}
+<div class="saas-card py-5 text-center">
+    <div class="opacity-25 mb-3"><i class="bi bi-graph-up-arrow fs-1"></i></div>
+    <h5 class="fw-bold mb-2">No credit analysis available yet</h5>
+    <p class="text-secondary small mb-0">Complete a financial submission to generate your first prediction and score view.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    const riskProb = parseFloat(document.getElementById("risk-prob-data")?.textContent || "0");
+    const riskScore = Math.round(riskProb * 100);
+
+    const gaugeCtx = document.getElementById('riskGaugeFull');
+    if (gaugeCtx) {
+        new Chart(gaugeCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [riskScore, 100 - riskScore],
+                    backgroundColor: [
+                        riskScore < 30 ? '#10b981' : (riskScore < 70 ? '#f59e0b' : '#ef4444'),
+                        '#e2e8f0'
+                    ],
+                    borderWidth: 0,
+                    circumference: 180,
+                    rotation: 270,
+                    borderRadius: 30,
+                    cutout: '86%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } }
+            }
+        });
+    }
+</script>
+{% endblock %}

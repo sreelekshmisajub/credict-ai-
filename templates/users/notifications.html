@@ -1,0 +1,97 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% load display_formatters %}
+
+{% block title %}Notifications | CreditSense AI{% endblock %}
+
+{% block dashboard_css %}
+<style>
+    .notification-item {
+        padding: 24px;
+        background: #fff;
+        border: 1px solid #eef2f6;
+        border-radius: 20px;
+        margin-bottom: 16px;
+        transition: all 0.2s;
+        border-left: 6px solid #e2e8f0;
+    }
+    .notification-item:hover { border-color: var(--accent); background: #f8fafc; }
+    .notif-critical { border-left-color: #ef4444; }
+    .notif-warning { border-left-color: #f59e0b; }
+    .notif-success { border-left-color: #10b981; }
+    .notif-info { border-left-color: #0ea5e9; }
+
+    .notif-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #f1f5f9;
+        font-size: 1.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block user_content %}
+<div class="row g-4 mb-5">
+    <div class="col-lg-8">
+        <h4 class="fw-bold mb-4">System Alerts & Notifications</h4>
+        
+        <div class="vstack">
+            {% for item in notification_feed %}
+                <div class="notification-item {% if 'risk' in item.title|lower or 'reject' in item.title|lower %}notif-critical{% elif 'approve' in item.title|lower %}notif-success{% elif 'update' in item.title|lower %}notif-info{% else %}notif-warning{% endif %}">
+                    <div class="d-flex gap-4 align-items-center">
+                        <div class="notif-icon">
+                            <i class="bi bi-{% if 'risk' in item.title|lower %}shield-exclamation{% elif 'approve' in item.title|lower %}patch-check{% elif 'document' in item.title|lower %}file-earmark{% else %}lightning{% endif %}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <h6 class="fw-bold mb-0">{{ item.title }}</h6>
+                                <span class="text-secondary small font-monospace">{{ item.timestamp|date:"M d, H:i" }}</span>
+                            </div>
+                            <p class="text-secondary small mb-2">{{ item.detail|truncatewords:40 }}</p>
+                            <a class="small fw-bold text-decoration-none" href="{{ item.link }}">Open details</a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="saas-card text-center py-5">
+                    <div class="opacity-25 mb-3"><i class="bi bi-bell-slash fs-1"></i></div>
+                    <h6 class="fw-bold text-secondary">No current notifications to display.</h6>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Right Column: Priority Groups -->
+    <div class="col-lg-4">
+        <div class="saas-card mb-4">
+            <h6 class="text-secondary fw-bold text-uppercase small mb-4">Notification Summary</h6>
+            <div class="vstack gap-3">
+                 <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-4">
+                     <span class="small fw-bold">Credit Analyses</span>
+                     <span class="badge bg-primary rounded-pill">{{ prediction_notification_count }}</span>
+                 </div>
+                 <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-4">
+                     <span class="small fw-bold">Loan Status Updates</span>
+                     <span class="badge bg-success rounded-pill px-3">{{ application_update_count }}</span>
+                 </div>
+                 <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-4">
+                     <span class="small fw-bold">Open Fraud Alerts</span>
+                     <span class="badge bg-danger rounded-pill px-3">{{ fraud_notification_count }}</span>
+                 </div>
+                 <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-4">
+                     <span class="small fw-bold">Announcements</span>
+                     <span class="badge bg-secondary rounded-pill px-3">{{ announcement_count }}</span>
+                 </div>
+            </div>
+        </div>
+
+        <div class="saas-card">
+            <h6 class="text-secondary fw-bold text-uppercase small mb-3">About This Page</h6>
+            <p class="small text-secondary mb-0">Only saved events from your applications, fraud alerts, document updates, and active announcements appear here.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
